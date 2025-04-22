@@ -6,6 +6,7 @@
 [github.com/ankitpokhrel/jira-cli]: https://github.com/ankitpokhrel/jira-cli
 [REST API]: https://developer.atlassian.com/server/jira/platform/rest
 [snips]: https://github.com/monopole/snips
+[doomed]: https://github.com/search?q=gojira+in%3Aname&type=Repositories
 
 # gojira
 
@@ -13,11 +14,14 @@
 `gojira` helps me do specific [Jira] tasks.
 <img src="internal/utils/gojira.jpg" align="right" height="180" width="140">
 I'm not trying to generalize `gojira` or make the underlying
-code publishable as a pkg. For a general jira CLI, use [`jira-cli`].
+code publishable as a pkg.
 
-Making this code public to expose more examples of hitting the Jira
-API from Go.  The API is wide enough that there's more than one way to
-do a particular task. Maybe fork this and look at [`jiraboss.go`].
+Everyone who knows some Go and must use jira is [doomed] to write a
+CLI called `gojira`.  For a general jira CLI, use [`jira-cli`].
+
+The API is wide enough that there's more than one way to do a
+particular task, so making this public. Feel free to fork this and
+adapt [`jiraboss.go`].
 
 ### Why write this?
 

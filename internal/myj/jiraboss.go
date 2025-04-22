@@ -433,7 +433,7 @@ func (jb *JiraBoss) CreateDiGraph() (*Graph, error) {
 		if k.Num >= UnknownEpicBase {
 			continue
 		}
-		doErr1("Considering ", k.String())
+		doErr1("Considering epic " + k.String())
 		issue, err := jb.GetOneIssueByKey(k)
 		if err != nil {
 			return nil, err

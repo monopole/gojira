@@ -121,33 +121,33 @@ func TestUnSpewEpics(t *testing.T) {
 	const (
 		inputData = `
 
-BUDS-598 [Epic] (Backlog)  2025-Mar-03 2025-Apr-14  6w1d  <blah> Sirius sirius
+BUDS-598 [Epic] (Backlog)  2025-Mar-03 2025-Apr-14  6w <blah> Sirius sirius
 
-     BUDS-607 [Task] (In Progress) 2025-Mar-06 2025-Mar-19 2w0d <blah>  Procyon procyon
-     CIA-606 [Story] (Done)   2025-Mar-20 2025-Apr-17 4w1d <> Rigel rigel
-     BUDS-608 [Task] (Closed Without Action)   2025-Apr-15 2025-Jun-10 8w1d   <blah> Arcturus arcturus
+     BUDS-607 [Task] (In Progress) 2025-Mar-06 2025-Mar-19 2w <blah>  Procyon procyon
+     CIA-606 [Story] (Done)   2025-Mar-20 2025-Apr-17 4w <> Rigel rigel
+     BUDS-608 [Task] (Closed Without Action)   2025-Apr-15 2025-Jun-10 8w  <blah> Arcturus arcturus
 
-Epic BUDS-597 [Epic] (In Queue)  2026-Feb-05 2026-Feb-26 3w1d <>           Vega vega
+Epic BUDS-597 [Epic] (In Queue)  2026-Feb-05 2026-Feb-26 3w <>           Vega vega
 
-Epic BUDS-596 [Epic] (In Queue)  2025-Apr-16 2025-May-21 5w1d <blah> Capella capella
+Epic BUDS-596 [Epic] (In Queue)  2025-Apr-16 2025-May-21 5w <blah> Capella capella
 
-     BUDS-605 [Story] (Ready For Development)     2025-Jun-15 2025-Aug-10 8w1d    <blah>  Rigel rigel
-     BUDS-604 [Task] (Backlog)  2025-Oct-15 2025-Dec-10 8w1d  <ap8_-ple,peach>  Betelgeuse betelgeuse
+     BUDS-605 [Story] (Ready For Development)     2025-Jun-15 2025-Aug-10 8w    <blah>  Rigel rigel
+     BUDS-604 [Task] (Backlog)  2025-Oct-15 2025-Dec-10 8w <ap8_-ple,peach>  Betelgeuse betelgeuse
 
 
 
 `
 		expectedFinal = `
-BUDS-598    [Epic]       (Backlog)        2025-Mar-03 2025-Apr-14  6w1d <blah> Sirius sirius
-  BUDS-607  [Task]       (In Progress)    2025-Mar-06 2025-Mar-19  2w0d <blah> Procyon procyon
-  BUDS-608  [Task]       (Closed Withou…) 2025-Apr-15 2025-Jun-10  8w1d <blah> Arcturus arcturus
-  CIA-606   [Story]      (Done)           2025-Mar-20 2025-Apr-17  4w1d <> Rigel rigel
+BUDS-598    [Epic]       (Backlog)        2025-Mar-03 2025-Apr-14   6w <blah> Sirius sirius
+  BUDS-607  [Task]       (In Progress)    2025-Mar-06 2025-Mar-19   2w <blah> Procyon procyon
+  BUDS-608  [Task]       (Closed Withou…) 2025-Apr-15 2025-Jun-10   8w <blah> Arcturus arcturus
+  CIA-606   [Story]      (Done)           2025-Mar-20 2025-Apr-17   4w <> Rigel rigel
 
-BUDS-596    [Epic]       (In Queue)       2025-Apr-16 2025-May-21  5w1d <blah> Capella capella
-  BUDS-604  [Task]       (Backlog)        2025-Oct-15 2025-Dec-10  8w1d <ap8_-ple,peach> Betelgeuse betelgeuse
-  BUDS-605  [Story]      (Ready for Dev…) 2025-Jun-15 2025-Aug-10  8w1d <blah> Rigel rigel
+BUDS-596    [Epic]       (In Queue)       2025-Apr-16 2025-May-21   5w <blah> Capella capella
+  BUDS-604  [Task]       (Backlog)        2025-Oct-15 2025-Dec-10   8w <ap8_-ple,peach> Betelgeuse betelgeuse
+  BUDS-605  [Story]      (Ready for Dev…) 2025-Jun-15 2025-Aug-10   8w <blah> Rigel rigel
 
-BUDS-597    [Epic]       (In Queue)       2026-Feb-05 2026-Feb-26  3w1d <> Vega vega
+BUDS-597    [Epic]       (In Queue)       2026-Feb-05 2026-Feb-26   3w <> Vega vega
 `
 	)
 

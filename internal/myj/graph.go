@@ -56,12 +56,17 @@ func (n *Node) writeDiGraphNode(w io.Writer, style string) {
 }
 
 func (n *Node) digraphLabel() string {
-	dr, err := utils.MakeDayRange0(n.startD, n.endD)
-	if err != nil {
-		panic(err)
-	}
 	return fmt.Sprintf(
-		"%s\n%s\n%s", n.key, dr.PrettyRange(), utils.ShortLines(n.title))
+		"%s\n%s\n%s",
+		n.key,
+		func() string {
+			dr, err := utils.MakeDayRange0(n.startD, n.endD)
+			if err != nil {
+				return "(bad date settings)"
+			}
+			return dr.PrettyRange()
+		}(),
+		utils.ShortLines(n.title))
 }
 
 type Edge struct {
@@ -143,11 +148,11 @@ func (g *Graph) ReportMisOrdering(w io.Writer) {
 func (g *Graph) ReportWeekends(w io.Writer) {
 	for _, n := range g.Nodes() {
 		if n.startD.IsWeekend() {
-			_, _ = fmt.Fprintf(w, "%12s starts on a %s (%s).\n",
+			_, _ = fmt.Fprintf(w, "Oops, %12s starts on a %s (%s).\n",
 				n.key, n.startD.Weekday(), n.startD.Brief())
 		}
 		if n.endD.IsWeekend() {
-			_, _ = fmt.Fprintf(w, "%12s   ends on a %s (%s).\n",
+			_, _ = fmt.Fprintf(w, "Oops, %12s   ends on a %s (%s).\n",
 				n.key, n.endD.Weekday(), n.endD.Brief())
 		}
 	}

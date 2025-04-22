@@ -16,17 +16,17 @@ func newBlockCmd(jb *myj.JiraBoss) *cobra.Command {
 	)
 	c := &cobra.Command{
 		Use:   "block {blocker} {blocked} {alsoBlocked}...",
-		Short: "Indicate that an issue 'blocks' other issues",
+		Short: "Indicate that an issue blocks (or does not block) other issues",
 		Example: `
-To indicate that issue 99 blocks issues 200, 201 and 202,
-i.e. that issue 99 must be completed before the other issues
-can be started, enter:
+  To indicate that issue 99 blocks issues 200, 201 and 202,
+  i.e. that issue 99 must be completed before the other issues
+  can be started, enter:
 
-   block 99 200 201 202
+    block 99 200 201 202
 
-To indicate that issue 99 DOES NOT block issues 200, 201 and 202:
+  To indicate that issue 99 does NOT block issues 200, 201 and 202:
 
-   block --remove 99 200 201 202
+    block --remove 99 200 201 202
 
 `,
 		Args: func(_ *cobra.Command, args []string) (err error) {

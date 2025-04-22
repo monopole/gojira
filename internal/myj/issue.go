@@ -157,7 +157,7 @@ func (ri *ResponseIssue) SpewParsable(w io.Writer, brief bool, depth int) {
 	d2 := ri.DateEnd()
 	_, _ = fmt.Fprintf(w, "%11s ", d1)
 	_, _ = fmt.Fprintf(w, "%11s ", d2)
-	_, _ = fmt.Fprintf(w, "%5s", utils.PrettyDayCount(d1.DayCount(d2)))
+	_, _ = fmt.Fprintf(w, "%3dw", d1.WeekCount(d2))
 
 	_, _ = fmt.Fprintf(
 		w, " %s", "<"+strings.Join(ri.Fields.Labels, ",")+"> ")
