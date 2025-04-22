@@ -134,7 +134,7 @@ var LineRegExp = regexp.MustCompile(
 func (ri *ResponseIssue) SpewParsable(w io.Writer, brief bool, depth int) {
 	doIndent(w, depth)
 	{
-		fieldSize := 12 - (len(indentVal) * depth)
+		fieldSize := 14 - (len(indentVal) * depth)
 		f := fmt.Sprintf("%%-%ds", fieldSize)
 		_, _ = fmt.Fprintf(w, f, ri.Key)
 	}
@@ -156,8 +156,8 @@ func (ri *ResponseIssue) SpewParsable(w io.Writer, brief bool, depth int) {
 	d1 := ri.DateStart()
 	d2 := ri.DateEnd()
 	_, _ = fmt.Fprintf(w, "%11s ", d1)
-	_, _ = fmt.Fprintf(w, "%11s ", d2)
-	_, _ = fmt.Fprintf(w, "%3dw", d1.WeekCount(d2))
+	_, _ = fmt.Fprintf(w, "%11s", d2)
+	_, _ = fmt.Fprintf(w, "%4dw", d1.WeekCount(d2))
 
 	_, _ = fmt.Fprintf(
 		w, " %s", "<"+strings.Join(ri.Fields.Labels, ",")+"> ")
