@@ -27,7 +27,7 @@ func DoCal(
 	w io.Writer,
 	epicMap map[myj.MyKey]*myj.ResponseIssue,
 	p CalParams,
-) {
+) error {
 	epicKeys := myj.GetSortedKeys(epicMap)
 	fmProj := fmt.Sprintf("%%%ds", fieldSizeProj)
 	fmId := fmt.Sprintf("%%%dd", fieldSizeProj)
@@ -54,11 +54,14 @@ func DoCal(
 	}
 	today := utils.Today()
 	lineCount := 0
+	var errors []error
 	for _, epicKey := range epicKeys {
 		epic := epicMap[epicKey.MyKey]
 		dr, err := utils.MakeDayRange0(epic.DateStart(), epic.DateEnd())
 		if err != nil {
-			panic(err)
+			errors = append(
+				errors,
+				fmt.Errorf("%s; %w", epicKey.MyKey, err))
 		}
 		_, _ = fmt.Fprintf(w, fmId, epic.MyKey.Num)
 		_, _ = fmt.Fprint(w, spacer)
@@ -75,4 +78,14 @@ func DoCal(
 			_, _ = fmt.Fprintln(w)
 		}
 	}
+	for _, err := range errors {
+		utils.DoErr1(err.Error())
+	}
+	if len(errors) == 0 {
+		return nil
+	}
+	if len(errors) == 1 {
+		return errors[0]
+	}
+	return fmt.Errorf("%w (plus %d other epic date errors)", errors[0], len(errors)-1)
 }

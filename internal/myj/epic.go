@@ -130,34 +130,34 @@ func (jb *JiraBoss) CheckEpics(
 		)
 		resp, err = jb.GetOneIssue(epicKey.Num)
 		if err != nil {
-			doErrF("Could not find epic %s", epicKey.String())
+			utils.DoErrF("Could not find epic %s", epicKey.String())
 			foundLookupError = true
 			continue
 		}
 		if resp.Key != epic.Key {
-			doErrF("Key mismatch %s != %s\n", resp.Key, epic.Key)
+			utils.DoErrF("Key mismatch %s != %s\n", resp.Key, epic.Key)
 			foundLookupError = true
 			continue
 		}
 		{
 			str, ok := epic.Fields.CustomEpicLink.(string)
 			if ok && str != "" {
-				doErrF("Epic %s should not have an epic link (its %s)\n",
+				utils.DoErrF("Epic %s should not have an epic link (its %s)\n",
 					epicKey.String(), str)
 				foundEpicError = true
 			}
 		}
 		if epic.Fields.Summary == "" {
-			doErrF("Epic %s should have a summary\n", epicKey.String())
+			utils.DoErrF("Epic %s should have a summary\n", epicKey.String())
 			foundEpicError = true
 		}
 		if !epic.IsEpic() {
-			doErrF("Epic %s should have type %q, not %q\n",
+			utils.DoErrF("Epic %s should have type %q, not %q\n",
 				epicKey.String(), IssueTypeEpic, epic.TypeRaw())
 			foundEpicError = true
 		}
 		if epic.Status() == IssueStatusUnknown {
-			doErrF("Epic %s has bad status %q\n",
+			utils.DoErrF("Epic %s has bad status %q\n",
 				epicKey.String(), epic.StatusRaw())
 			foundEpicError = true
 		}

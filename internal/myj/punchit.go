@@ -44,14 +44,14 @@ func (jb *JiraBoss) punchItChewie(
 }
 
 func dump(lab string, body []byte) {
-	doErrF("BEGIN %s ---------------------", lab)
+	utils.DoErrF("BEGIN %s ---------------------", lab)
 	var pretty bytes.Buffer
 	if err := json.Indent(&pretty, body, " ", "  "); err != nil {
-		doErr1(fmt.Errorf("json indent failure %w", err).Error())
+		utils.DoErr1(fmt.Errorf("json indent failure %w", err).Error())
 	} else {
-		doErr1(pretty.String())
+		utils.DoErr1(pretty.String())
 	}
-	doErrF("END %s ---------------------", lab)
+	utils.DoErrF("END %s ---------------------", lab)
 }
 
 func (jb *JiraBoss) doRequest(

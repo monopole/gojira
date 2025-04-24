@@ -49,14 +49,6 @@ func MakeRangeFromStringPair(arg string) (*DayRange, error) {
 	return MakeDayRange0(start, end)
 }
 
-// MakeDayRange0 makes an instance of DayRange from the given arguments.
-func MakeDayRange0(start, end Date) (*DayRange, error) {
-	if end.Before(start) {
-		return nil, fmt.Errorf("end %s is before start %s", end, start)
-	}
-	return &DayRange{date: start, dayCount: start.DayCount(end)}, nil
-}
-
 // MakeDayRange1 makes an instance of DayRange from the given arguments.
 func MakeDayRange1(startS string, dayCount int) (*DayRange, error) {
 	start, err := ParseDate(startS)
@@ -358,4 +350,40 @@ func (dr *DayRange) DayHeaders() (string, string) {
 	b1.WriteByte(emptySpace)
 	b2.WriteByte(emptySpace)
 	return b1.String(), b2.String()
+}
+
+func MakeDayRange0(start, end Date) (*DayRange, error) {
+	const defaultDelta = 4 * 7 // ~one month
+	var err error
+	if start.IsGood() {
+		if end.IsGood() {
+			if end.Before(start) {
+				err = fmt.Errorf(
+					"start=%s doesn't precede end=%s; swapping",
+					start, end)
+				start, end = end, start
+			}
+		} else {
+			err = fmt.Errorf(
+				"bad end date %s; using start plus ~%d days", end, defaultDelta)
+			end = start.AddDays(defaultDelta).SlideBeforeWeekend()
+		}
+	} else {
+		if end.IsGood() {
+			err = fmt.Errorf(
+				"bad start date %s; using end minus ~%d days", start, defaultDelta)
+			start = end.AddDays(-defaultDelta).SlideOverWeekend()
+		} else {
+			err = fmt.Errorf(
+				"bad start=%s and end=%s; using tomorrow and today + ~%d days",
+				start, end, defaultDelta)
+			start = Today().AddDays(1).SlideOverWeekend()
+			end = start.AddDays(defaultDelta).SlideOffWeekend()
+		}
+	}
+	return makeDr(start, end), err
+}
+
+func makeDr(start, end Date) *DayRange {
+	return &DayRange{date: start, dayCount: start.DayCount(end)}
 }

@@ -127,7 +127,7 @@ func (jb *JiraBoss) writeLabels(issue int, labels []string) (err error) {
 }
 
 func (jb *JiraBoss) WriteEpics(em map[MyKey]*ResponseIssue) error {
-	doErrF("Renaming %d epics.\n", len(em))
+	utils.DoErrF("Renaming %d epics.\n", len(em))
 	for _, epic := range em {
 		if err := jb.writeOneEpic(epic); err != nil {
 			return fmt.Errorf("could not write epic %q %w", epic.MyKey, err)
@@ -161,7 +161,7 @@ func (jb *JiraBoss) writeOneEpic(epic *ResponseIssue) (err error) {
 		},
 	}
 	if debug {
-		doErrF("Would write epic %+v\n", req)
+		utils.DoErrF("Would write epic %+v\n", req)
 		return nil
 	}
 	_, err = jb.punchItChewie(
@@ -172,9 +172,9 @@ func (jb *JiraBoss) writeOneEpic(epic *ResponseIssue) (err error) {
 
 func (jb *JiraBoss) WriteIssues(
 	im map[MyKey]IssueList) error {
-	doErrF("Writing %d issue lists.\n", len(im))
+	utils.DoErrF("Writing %d issue lists.\n", len(im))
 	for epic, list := range im {
-		doErrF("  Writing %d issues.\n", len(list))
+		utils.DoErrF("  Writing %d issues.\n", len(list))
 		for _, issue := range list {
 			if err := jb.writeOneIssue(issue, epic); err != nil {
 				return fmt.Errorf("could not write issue %q %w", issue.MyKey, err)
@@ -211,7 +211,7 @@ func (jb *JiraBoss) writeOneIssue(issue *ResponseIssue, epic MyKey) (err error) 
 		},
 	}
 	if debug {
-		doErrF("Would write issue %+v\n", req)
+		utils.DoErrF("Would write issue %+v\n", req)
 		return nil
 	}
 	_, err = jb.punchItChewie(
@@ -244,7 +244,7 @@ func (jb *JiraBoss) ClearEpicLink(issue int) (err error) {
 func (jb *JiraBoss) GetCustomFieldId(name string) string {
 	fields, err := jb.DoOneFieldRequest()
 	if err != nil {
-		doErrF("no luck with field request")
+		utils.DoErrF("no luck with field request")
 		log.Fatal(err)
 	}
 	for _, f := range fields {
@@ -433,7 +433,7 @@ func (jb *JiraBoss) CreateDiGraph() (*Graph, error) {
 		if k.Num >= UnknownEpicBase {
 			continue
 		}
-		doErr1("Considering epic " + k.String())
+		utils.DoErr1("Considering epic " + k.String())
 		issue, err := jb.GetOneIssueByKey(k)
 		if err != nil {
 			return nil, err
@@ -471,7 +471,7 @@ func (jb *JiraBoss) ConsiderEpic(
 				err = fmt.Errorf(
 					"in epic %s, unable to look up blocker %s; %w",
 					epicKey, other, err)
-				doErr1(err.Error())
+				utils.DoErr1(err.Error())
 				continue
 			}
 			if other != issue.MyKey {
@@ -484,7 +484,7 @@ func (jb *JiraBoss) ConsiderEpic(
 				// blockers, because the graph might feed into other functions
 				// like fixing dates, and we cannot expect date fields on
 				// non-epics to be meaningful. Perhaps control this with flag.
-				doErrF(
+				utils.DoErrF(
 					"in epic %s, ignoring blockage by (non-epic) %s %s (%s)\n",
 					epicKey, issue.Type(), issue.MyKey, issue.Status())
 				continue
@@ -522,7 +522,7 @@ func (jb *JiraBoss) WriteDates(doIt bool, nodes map[MyKey]*Node) error {
 					success++
 				} else {
 					lastErr = err
-					_, _ = fmt.Fprintln(os.Stderr, err)
+					utils.DoErr1(err.Error())
 				}
 			}
 		}
@@ -533,22 +533,13 @@ func (jb *JiraBoss) WriteDates(doIt bool, nodes map[MyKey]*Node) error {
 				os.Stderr, "Succeeded in %d of %d date moves.\n",
 				success, proposedChangeCount)
 		} else {
-			_, _ = fmt.Fprintf(
-				os.Stderr, `
+			utils.DoErrF(`
 Redo this with --%s to move these %d dates,
 or do them individually with 'set start' and 'set duration'.`,
 				FlagFixDatesName, proposedChangeCount)
 		}
 	} else {
-		_, _ = fmt.Fprintf(os.Stderr, "No changes proposed.\n")
+		utils.DoErrF("No changes proposed.\n")
 	}
 	return lastErr
-}
-
-func doErrF(f string, args ...any) {
-	_, _ = fmt.Fprintf(os.Stderr, f, args...)
-}
-
-func doErr1(f ...string) {
-	_, _ = fmt.Fprintln(os.Stderr, f)
 }

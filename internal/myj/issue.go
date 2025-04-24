@@ -271,7 +271,7 @@ func (jb *JiraBoss) CheckIssues(im map[MyKey]IssueList) error {
 	count := 0
 	for epicKey, issueList := range im {
 		count++
-		doErrF("Checking list %d with %d issues.\n",
+		utils.DoErrF("Checking list %d with %d issues.\n",
 			count, len(issueList))
 		var (
 			resp *ResponseIssue
@@ -279,16 +279,16 @@ func (jb *JiraBoss) CheckIssues(im map[MyKey]IssueList) error {
 		)
 		resp, err = jb.GetOneIssue(epicKey.Num)
 		if err != nil {
-			doErrF("Could not find epic %s", epicKey.String())
+			utils.DoErrF("Could not find epic %s", epicKey.String())
 			foundLookupError = true
 		} else if !resp.IsEpic() {
-			doErrF("Why is the non-epic %s in the issue keys?\n", epicKey)
+			utils.DoErrF("Why is the non-epic %s in the issue keys?\n", epicKey)
 			foundTypeError = true
 		}
 		for _, issue := range issueList {
 			resp, err = jb.GetOneIssue(issue.MyKey.Num)
 			if err != nil {
-				doErrF("Could not find issue %s", issue.Key)
+				utils.DoErrF("Could not find issue %s", issue.Key)
 				foundLookupError = true
 				continue
 			}
@@ -399,7 +399,7 @@ func (jb *JiraBoss) BlockIssues(blocker int, toBeBlocked []int, comment string) 
 			return err
 		}
 	}
-	doErrF("%d now blocks %v\n", blocker, toBeBlocked)
+	utils.DoErrF("%d now blocks %v\n", blocker, toBeBlocked)
 	return nil
 }
 
@@ -429,12 +429,12 @@ func (jb *JiraBoss) UnBlockIssues(blocker int, blocked []int) error {
 					return err
 				}
 				count++
-				doErrF("%d no longer blocks %v\n", blocker, issue)
+				utils.DoErrF("%d no longer blocks %v\n", blocker, issue)
 				break
 			}
 		}
 	}
-	doErrF("Deleted %d blocking links.\n", count)
+	utils.DoErrF("Deleted %d blocking links.\n", count)
 	return nil
 }
 

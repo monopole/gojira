@@ -65,8 +65,7 @@ func newCalCmd(jb *myj.JiraBoss) *cobra.Command {
 					epicMap[k] = v
 				}
 			}
-			report.DoCal(os.Stdout, epicMap, calP)
-			return nil
+			return report.DoCal(os.Stdout, epicMap, calP)
 		},
 	}
 	c.Flags().BoolVar(&calP.UseColor, "color", true, "use colors")
