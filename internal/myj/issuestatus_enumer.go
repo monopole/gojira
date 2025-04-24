@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-const _IssueStatusName = "IssueStatusUnknownBacklogDoneClosedClosed Without ActionIn ProgressIn QueueRelease CandidateValidationReady for DevelopmentReady for Review"
+const _IssueStatusName = "IssueStatusUnknownBacklogDoneClosedClosed Without ActionIn ProgressIn QueueRelease CandidateIn ValidationValidationReady for DevelopmentReady for Review"
 
-var _IssueStatusIndex = [...]uint8{0, 18, 25, 29, 35, 56, 67, 75, 92, 102, 123, 139}
+var _IssueStatusIndex = [...]uint8{0, 18, 25, 29, 35, 56, 67, 75, 92, 105, 115, 136, 152}
 
-const _IssueStatusLowerName = "issuestatusunknownbacklogdoneclosedclosed without actionin progressin queuerelease candidatevalidationready for developmentready for review"
+const _IssueStatusLowerName = "issuestatusunknownbacklogdoneclosedclosed without actionin progressin queuerelease candidatein validationvalidationready for developmentready for review"
 
 func (i IssueStatus) String() string {
 	if i < 0 || i >= IssueStatus(len(_IssueStatusIndex)-1) {
@@ -32,12 +32,13 @@ func _IssueStatusNoOp() {
 	_ = x[IssueStatusInProgress-(5)]
 	_ = x[IssueStatusInQueue-(6)]
 	_ = x[IssueStatusReleaseCandidate-(7)]
-	_ = x[IssueStatusValidation-(8)]
-	_ = x[IssueStatusReadyForDev-(9)]
-	_ = x[IssueStatusReadyForReview-(10)]
+	_ = x[IssueStatusInValidation-(8)]
+	_ = x[IssueStatusValidation-(9)]
+	_ = x[IssueStatusReadyForDev-(10)]
+	_ = x[IssueStatusReadyForReview-(11)]
 }
 
-var _IssueStatusValues = []IssueStatus{IssueStatusUnknown, IssueStatusBacklog, IssueStatusDone, IssueStatusClosed, IssueStatusClosedWoAction, IssueStatusInProgress, IssueStatusInQueue, IssueStatusReleaseCandidate, IssueStatusValidation, IssueStatusReadyForDev, IssueStatusReadyForReview}
+var _IssueStatusValues = []IssueStatus{IssueStatusUnknown, IssueStatusBacklog, IssueStatusDone, IssueStatusClosed, IssueStatusClosedWoAction, IssueStatusInProgress, IssueStatusInQueue, IssueStatusReleaseCandidate, IssueStatusInValidation, IssueStatusValidation, IssueStatusReadyForDev, IssueStatusReadyForReview}
 
 var _IssueStatusNameToValueMap = map[string]IssueStatus{
 	_IssueStatusName[0:18]:         IssueStatusUnknown,
@@ -56,12 +57,14 @@ var _IssueStatusNameToValueMap = map[string]IssueStatus{
 	_IssueStatusLowerName[67:75]:   IssueStatusInQueue,
 	_IssueStatusName[75:92]:        IssueStatusReleaseCandidate,
 	_IssueStatusLowerName[75:92]:   IssueStatusReleaseCandidate,
-	_IssueStatusName[92:102]:       IssueStatusValidation,
-	_IssueStatusLowerName[92:102]:  IssueStatusValidation,
-	_IssueStatusName[102:123]:      IssueStatusReadyForDev,
-	_IssueStatusLowerName[102:123]: IssueStatusReadyForDev,
-	_IssueStatusName[123:139]:      IssueStatusReadyForReview,
-	_IssueStatusLowerName[123:139]: IssueStatusReadyForReview,
+	_IssueStatusName[92:105]:       IssueStatusInValidation,
+	_IssueStatusLowerName[92:105]:  IssueStatusInValidation,
+	_IssueStatusName[105:115]:      IssueStatusValidation,
+	_IssueStatusLowerName[105:115]: IssueStatusValidation,
+	_IssueStatusName[115:136]:      IssueStatusReadyForDev,
+	_IssueStatusLowerName[115:136]: IssueStatusReadyForDev,
+	_IssueStatusName[136:152]:      IssueStatusReadyForReview,
+	_IssueStatusLowerName[136:152]: IssueStatusReadyForReview,
 }
 
 var _IssueStatusNames = []string{
@@ -73,9 +76,10 @@ var _IssueStatusNames = []string{
 	_IssueStatusName[56:67],
 	_IssueStatusName[67:75],
 	_IssueStatusName[75:92],
-	_IssueStatusName[92:102],
-	_IssueStatusName[102:123],
-	_IssueStatusName[123:139],
+	_IssueStatusName[92:105],
+	_IssueStatusName[105:115],
+	_IssueStatusName[115:136],
+	_IssueStatusName[136:152],
 }
 
 // IssueStatusString retrieves an enum value from the enum constants string name.

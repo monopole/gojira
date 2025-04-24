@@ -2,13 +2,13 @@ package commands
 
 import (
 	"fmt"
-	"github.com/monopole/gojira/internal/utils"
 	"os"
 
 	"github.com/monopole/gojira/internal/commands/epic"
 	"github.com/monopole/gojira/internal/commands/set"
 	"github.com/monopole/gojira/internal/myhttp"
 	"github.com/monopole/gojira/internal/myj"
+	"github.com/monopole/gojira/internal/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -32,11 +32,11 @@ func NewGoJiraCommand() *cobra.Command {
 		Short:        "Manipulate jira issues - read, write, create reports, etc.",
 		SilenceUsage: true,
 		Example: `
-  View your epics as a directed graph (via [dot]):
+  View epics as a directed graph (via https://graphviz.org/docs/layouts/dot):
 
     gojira epic dot | dot -Tsvg | display -
 
-  View your epics as a six month wide calendar on the terminal
+  View epics as a six month wide calendar on the terminal
 
     gojira epic cal 6m
 

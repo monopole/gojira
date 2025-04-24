@@ -3,61 +3,40 @@
 [`dot`]: https://graphviz.org/docs/layouts/dot
 [`jira-cli`]: #jira-cli-advertisment
 [`jiraboss.go`]: internal/myj/jiraboss.go
+[custom fields]: internal/myj/customfields.go
 [github.com/ankitpokhrel/jira-cli]: https://github.com/ankitpokhrel/jira-cli
 [REST API]: https://developer.atlassian.com/server/jira/platform/rest
 [snips]: https://github.com/monopole/snips
-[doomed]: https://github.com/search?q=gojira+in%3Aname&type=Repositories
+[doomed]: https://github.com/search?q=jira+in%3Areadme+and+gojira+in%3Aname+and+language%3Ago&type=repositories&ref=advsearch
 
 # gojira
 
 
 `gojira` helps me do specific [Jira] tasks.
 <img src="internal/utils/gojira.jpg" align="right" height="180" width="140">
+
+Everyone who knows some Go, must use Jira,
+and must use Jia customizations is [doomed] to write a
+CLI called `gojira`.  The Jira web UX
+simply cannot offer good and fast UX for all the
+things one might do (or be forced to do by circumstance)
+with the organic, sprawling Jira [REST API].
+
 I'm not trying to generalize `gojira` or make the underlying
-code publishable as a pkg.
-
-Everyone who knows some Go and must use jira is [doomed] to write a
-CLI called `gojira`.  For a general jira CLI, use [`jira-cli`].
-
-The API is wide enough that there's more than one way to do a
-particular task, so making this public. Feel free to fork this and
-adapt [`jiraboss.go`].
-
-### Why write this?
-
-It seems that Jira evolved from simple issue tracking
-to project management. Jira takes no sides, opting to
-offer more customization options rather than constrain
-users to a specific management practice.  Jira now has
-an organic, sprawling [REST API].
-
-Allowing so many options means complex, slow or perhaps
-missing functionality in the canonical Jira web UX,
-especially if using custom fields or doing multistep
-ops like generating dependency graphs and cascading
-date management. [`jira-cli`], although broad and fast,
-obviously can't know how or why you've customized Jira.
-
-To meet the reporting demands of a specific team with
-legacy Jira customizations I often needed to do
-multistep operations using custom fields.  This was
-slow and error-prone in the Web app.  I started writing
-shell to drive `jira-cli`, `curl`, `awk` etc. which was
-better than the web UX, but the code got ugly.
-Eventually the ugly drove me to re-use some Go I
-already had ([snips]) to hit the Jira API directly and do
-processing solely in Go.
+code publishable as a pkg, but I am trying to keep
+it tidy. For a great _general purpose_ Jira CLI see [`jira-cli`].
 
 ### Installation
 
 The parts of this that are interesting to me won't work
-for you.  It relies on custom fields to define
-start-end dates and group stories into epics.  Maybe
-fork and adapt it; just change where it gets dates and
+for you.  It relies on [custom fields] to define
+start-end dates and group stories into epics.
+Feel free to fork and
+adapt [`jiraboss.go`]. Change where it gets dates and
 you're mostly done getting the `epic cal` and [`dot`]
 commands to work.
 
-Nevertheless you can see if it compiles:
+Nevertheless, it should install with:
 
 ```bash
 go install github.com/monopole/gojira@latest
@@ -102,3 +81,20 @@ Look at one issue:
 ```bash
 jira issue view LEMON-33
 ```
+
+### Why do yet another gojira?
+
+Because of particular reporting needs (dependency
+graphs), a need for flexible yet safe epic date management,
+and a need for [custom fields].
+
+This effort started as
+shell to drive `jira-cli`, `curl`, `awk` etc. to do
+what I needed to do.
+`jira-cli`, although broad and fast,
+can't know how and why you've customized Jira and
+serve those needs well.
+
+The shell code got unwieldly, so I
+switched to Go to hit the Jira API directly reusing
+some old code ([snips]).

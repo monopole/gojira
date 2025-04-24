@@ -12,13 +12,9 @@ import (
 
 func newCalCmd(jb *myj.JiraBoss) *cobra.Command {
 	var (
-		color         bool
-		nameFieldSize int
-		lineSetSize   int
-		showHeaders   bool
-		flagPrevVal   string
-		prevDays      int
-		outer         *utils.DayRange
+		calP        report.CalParams
+		flagPrevVal string
+		prevDays    int
 	)
 	const (
 		flagPrevName    = "prev"
@@ -57,7 +53,7 @@ func newCalCmd(jb *myj.JiraBoss) *cobra.Command {
 					flagPrevName, flagPrevVal, err)
 			}
 			start := utils.Today().SlideOverWeekend().AddDays(-prevDays)
-			outer, err = utils.MakeDayRange2(start, dayCount+prevDays)
+			calP.Outer, err = utils.MakeDayRange2(start, dayCount+prevDays)
 			return err
 		},
 
@@ -69,16 +65,14 @@ func newCalCmd(jb *myj.JiraBoss) *cobra.Command {
 					epicMap[k] = v
 				}
 			}
-			report.Cal(
-				os.Stdout, jb.Project(), epicMap,
-				outer, color, nameFieldSize, showHeaders, lineSetSize)
+			report.DoCal(os.Stdout, epicMap, calP)
 			return nil
 		},
 	}
-	c.Flags().BoolVar(&color, "color", true, "use colors")
-	c.Flags().BoolVar(&showHeaders, "header", true, "show date headers")
-	c.Flags().IntVar(&nameFieldSize, "name-size", 70, "size of name field")
-	c.Flags().IntVar(&lineSetSize, "line-set-size", 3, "number of lines in a set")
+	c.Flags().BoolVar(&calP.UseColor, "color", true, "use colors")
+	c.Flags().BoolVar(&calP.ShowHeaders, "header", true, "show date headers")
+	c.Flags().IntVar(&calP.FieldSizeName, "name-size", 70, "size of name field")
+	c.Flags().IntVar(&calP.LineSetSize, "line-set-size", 3, "number of lines in a set")
 	c.Flags().StringVar(&flagPrevVal, flagPrevName, flagPrevDefault,
 		"number of previous days, weeks, months to show")
 	return c

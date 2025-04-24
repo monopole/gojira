@@ -14,35 +14,39 @@ const (
 	fieldSizeProj = 5
 )
 
-func Cal(
+type CalParams struct {
+	ProjectName   string
+	Outer         *utils.DayRange
+	UseColor      bool
+	FieldSizeName int
+	ShowHeaders   bool
+	LineSetSize   int
+}
+
+func DoCal(
 	w io.Writer,
-	project string,
 	epicMap map[myj.MyKey]*myj.ResponseIssue,
-	outer *utils.DayRange,
-	color bool,
-	fieldSizeName int,
-	showHeaders bool,
-	lineSetSize int,
+	p CalParams,
 ) {
 	epicKeys := myj.GetSortedKeys(epicMap)
 	fmProj := fmt.Sprintf("%%%ds", fieldSizeProj)
 	fmId := fmt.Sprintf("%%%dd", fieldSizeProj)
-	fmName := fmt.Sprintf("%%%ds", fieldSizeName)
-	if showHeaders {
+	fmName := fmt.Sprintf("%%%ds", p.FieldSizeName)
+	if p.ShowHeaders {
 		_, _ = fmt.Fprintf(w, fmProj, blankName)
 		_, _ = fmt.Fprint(w, spacer)
 		_, _ = fmt.Fprintf(w, fmName, blankName)
 		_, _ = fmt.Fprint(w, spacer)
-		_, _ = fmt.Fprintln(w, outer.MonthHeader())
+		_, _ = fmt.Fprintln(w, p.Outer.MonthHeader())
 
-		h1, h2 := outer.DayHeaders()
+		h1, h2 := p.Outer.DayHeaders()
 		_, _ = fmt.Fprintf(w, fmProj, blankName)
 		_, _ = fmt.Fprint(w, spacer)
 		_, _ = fmt.Fprintf(w, fmName, blankName)
 		_, _ = fmt.Fprint(w, spacer)
 		_, _ = fmt.Fprintln(w, h1)
 
-		_, _ = fmt.Fprintf(w, fmProj, project)
+		_, _ = fmt.Fprintf(w, fmProj, p.ProjectName)
 		_, _ = fmt.Fprint(w, spacer)
 		_, _ = fmt.Fprintf(w, fmName, blankName)
 		_, _ = fmt.Fprint(w, spacer)
@@ -58,12 +62,16 @@ func Cal(
 		}
 		_, _ = fmt.Fprintf(w, fmId, epic.MyKey.Num)
 		_, _ = fmt.Fprint(w, spacer)
-		_, _ = fmt.Fprintf(w, fmName, utils.Ellipsis(epic.MySummary(), fieldSizeName))
+		_, _ = fmt.Fprintf(
+			w, fmName, utils.Ellipsis(epic.MySummary(), p.FieldSizeName))
 		_, _ = fmt.Fprint(w, spacer)
-		_, _ = fmt.Fprint(w, dr.AsIntersect(today, outer, color))
+		_, _ = fmt.Fprint(
+			w, dr.AsIntersect(
+				today, p.Outer, p.UseColor,
+				myj.StatusColor(epic.Status(), myj.ColorKindTerminal)))
 		_, _ = fmt.Fprintln(w)
 		lineCount++
-		if lineCount%lineSetSize == 0 {
+		if lineCount%p.LineSetSize == 0 {
 			_, _ = fmt.Fprintln(w)
 		}
 	}

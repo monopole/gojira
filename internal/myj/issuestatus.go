@@ -12,6 +12,7 @@ const (
 	IssueStatusInProgress                   // In Progress
 	IssueStatusInQueue                      // In Queue
 	IssueStatusReleaseCandidate             // Release Candidate
+	IssueStatusInValidation                 // In Validation
 	IssueStatusValidation                   // Validation
 	IssueStatusReadyForDev                  // Ready for Development
 	IssueStatusReadyForReview               // Ready for Review

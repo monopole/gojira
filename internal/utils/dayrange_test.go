@@ -253,7 +253,7 @@ func Test_AsIntersect(t *testing.T) {
 			if err != nil {
 				t.Fatal(err.Error())
 			}
-			x := inner.AsIntersect(today, outer, false)
+			x := inner.AsIntersect(today, outer, false, "")
 			h1, h2 := outer.DayHeaders()
 			assert.Equal(t, tc.expected, x)
 			assert.Equal(t, tc.header0, outer.MonthHeader())

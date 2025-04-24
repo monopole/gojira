@@ -50,9 +50,11 @@ func (n *Node) seemsDone() bool {
 		n.status == IssueStatusClosedWoAction
 }
 
-func (n *Node) writeDiGraphNode(w io.Writer, style string) {
+func (n *Node) writeDiGraphNode(w io.Writer) {
 	_, _ = fmt.Fprintf(
-		w, "  %q [label=\"%s\" %s];\n", n.key, n.digraphLabel(), style)
+		w,
+		"  %q [label=\"%s\" style=filled fillcolor=%s];\n",
+		n.key, n.digraphLabel(), StatusColor(n.status, ColorKindDot))
 }
 
 func (n *Node) digraphLabel() string {
@@ -110,20 +112,7 @@ func (g *Graph) WriteDigraph(w io.Writer, flip bool) {
 		}())
 	_, _ = fmt.Fprintln(w, "  node [shape=ellipse];")
 	for _, node := range g.Nodes() {
-		style := ""
-		switch node.status {
-		case IssueStatusDone, IssueStatusClosed:
-			style = "style=filled fillcolor=lightgreen"
-		case IssueStatusClosedWoAction:
-			style = "style=filled fillcolor=red"
-		case IssueStatusInProgress:
-			style = "style=filled fillcolor=pink"
-		case IssueStatusInQueue:
-			style = "style=filled fillcolor=yellow"
-		default:
-			style = ""
-		}
-		node.writeDiGraphNode(w, style)
+		node.writeDiGraphNode(w)
 	}
 	for edge := range g.Edges() {
 		_, _ = fmt.Fprintf(w, "%q -> %q;\n", edge.dependency, edge.dependent)

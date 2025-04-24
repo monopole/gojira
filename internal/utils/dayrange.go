@@ -164,21 +164,17 @@ const (
 	zeroPlaceholder = '_' // Because using 0 is confusing if a digit precedes it
 )
 
-var (
-	colorEpic     = colorGreen
-	colorOverflow = colorGreen
-)
-
 type MyBuff struct {
 	useColors bool
+	color     ColorString
 	bytes.Buffer
 }
 
 func (b *MyBuff) writeTodaySymbol() {
 	if b.useColors {
-		b.WriteString(colorYellow)
+		b.WriteString(string(TerminalColorGray))
 		b.WriteRune(circleClosed)
-		b.WriteString(colorReset)
+		b.WriteString(TerminalReset)
 	} else {
 		b.WriteRune(plusSign)
 	}
@@ -186,18 +182,18 @@ func (b *MyBuff) writeTodaySymbol() {
 
 func (b *MyBuff) writeDaySymbol() {
 	if b.useColors {
-		b.WriteString(colorEpic)
+		b.WriteString(string(b.color))
 		b.WriteRune(circleOpen)
-		b.WriteString(colorReset)
+		b.WriteString(TerminalReset)
 	} else {
 		b.WriteRune(hyphen)
 	}
 }
 func (b *MyBuff) writeStartsEarlierSymbol() {
 	if b.useColors {
-		b.WriteString(colorOverflow)
+		b.WriteString(string(b.color))
 		b.WriteRune(arrowLeftBig)
-		b.WriteString(colorReset)
+		b.WriteString(TerminalReset)
 	} else {
 		b.WriteRune(arrowLeftSmall)
 	}
@@ -205,9 +201,9 @@ func (b *MyBuff) writeStartsEarlierSymbol() {
 
 func (b *MyBuff) writeEndsLaterSymbol() {
 	if b.useColors {
-		b.WriteString(colorOverflow)
+		b.WriteString(string(b.color))
 		b.WriteRune(arrowRightBig)
-		b.WriteString(colorReset)
+		b.WriteString(TerminalReset)
 	} else {
 		b.WriteRune(arrowRightSmall)
 	}
@@ -215,9 +211,9 @@ func (b *MyBuff) writeEndsLaterSymbol() {
 
 func (b *MyBuff) writeDaySeparator() {
 	if b.useColors {
-		b.WriteString(colorGray)
+		b.WriteString(TerminalColorGray)
 		b.WriteRune(vertBar)
-		b.WriteString(colorReset)
+		b.WriteString(TerminalReset)
 	} else {
 		b.WriteRune(vertBar)
 	}
@@ -243,10 +239,11 @@ func (b *MyBuff) writeDaySeparator() {
 //
 // If the character is a '+', it's today.
 func (dr *DayRange) AsIntersect(
-	today Date, outer *DayRange, useColor bool) string {
+	today Date, outer *DayRange, useColor bool, clr ColorString) string {
 	outer = outer.RoundToMondayAndFriday()
 	var b MyBuff
 	b.useColors = useColor
+	b.color = clr
 	outDay := outer.Start().AddDays(-1)
 	if dr.StartsBefore(outer) {
 		b.writeStartsEarlierSymbol()
