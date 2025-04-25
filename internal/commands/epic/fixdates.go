@@ -2,9 +2,10 @@ package epic
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/monopole/gojira/internal/myj"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 const (
@@ -37,14 +38,18 @@ If a new end date lands on a weekend, it slides back to the preceding Friday.
 			if err != nil {
 				return err
 			}
-			g.ReportNodes(os.Stderr)
+			g.SaveOriginalDates()
+			g.ScanAndReportNodes(os.Stderr)
 			g.ReportMisOrdering(os.Stderr)
 			g.ReportWeekends(os.Stderr)
-			g.MaybeChangeInMemoryDates(tighten)
+			g.MaybeShiftDependentsLater()
+			if tighten {
+				g.MaybeShiftEarlier()
+			}
 			return jb.WriteDates(doIt, g.Nodes())
 		},
 	}
-	c.Flags().BoolVar(&doIt, flagDoIt, false,
+	c.Flags().BoolVar(&doIt, myj.FlagDoIt, false,
 		"actually write new dates, rather than just report")
 	c.Flags().BoolVar(&tighten, "tighten", false,
 		"look for gaps and tighten them")

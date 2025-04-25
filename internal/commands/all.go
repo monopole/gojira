@@ -17,7 +17,7 @@ const (
 	envJiraToken   = "JIRA_API_TOKEN"
 	envJiraHost    = "JIRA_HOST"
 	envJiraProject = "JIRA_PROJECT"
-	flagJiraToken  = "jira-token"
+	flagJiraToken  = "token"
 )
 
 func NewGoJiraCommand() *cobra.Command {
@@ -74,11 +74,11 @@ func NewGoJiraCommand() *cobra.Command {
 		newBlockCmd(&jb),
 	)
 	func(set *pflag.FlagSet) {
-		set.StringVar(&jiraArgs.Project, "jira-project", "",
+		set.StringVarP(&jiraArgs.Project, "project", "p", "",
 			fmt.Sprintf("jira project (overrides $%s)", envJiraProject))
-		set.StringVar(&jiraArgs.Host, "jira-host", "",
+		set.StringVarP(&jiraArgs.Host, "jira-host", "j", "",
 			fmt.Sprintf("jira host (overrides $%s)", envJiraHost))
-		set.StringVar(&jiraArgs.Token, flagJiraToken, "",
+		set.StringVarP(&jiraArgs.Token, flagJiraToken, "t", "",
 			fmt.Sprintf("access token for the given jira host (overrides $%s)",
 				envJiraToken))
 	}(c.PersistentFlags())

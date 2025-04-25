@@ -57,7 +57,7 @@ func DoCal(
 	var errors []error
 	for _, epicKey := range epicKeys {
 		epic := epicMap[epicKey.MyKey]
-		dr, err := utils.MakeDayRange0(epic.DateStart(), epic.DateEnd())
+		dr, err := utils.MakeDayRangeGentle(epic.DateStart(), epic.DateEnd())
 		if err != nil {
 			errors = append(
 				errors,
@@ -78,14 +78,8 @@ func DoCal(
 			_, _ = fmt.Fprintln(w)
 		}
 	}
-	for _, err := range errors {
-		utils.DoErr1(err.Error())
-	}
 	if len(errors) == 0 {
 		return nil
 	}
-	if len(errors) == 1 {
-		return errors[0]
-	}
-	return fmt.Errorf("%w (plus %d other epic date errors)", errors[0], len(errors)-1)
+	return fmt.Errorf("detected %d date errors, e.g. %w", len(errors), errors[0])
 }

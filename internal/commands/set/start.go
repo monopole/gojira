@@ -68,7 +68,7 @@ func newStartCmd(jb *myj.JiraBoss) *cobra.Command {
 			}
 			oldStart := record.DateStart()
 			oldEnd := record.DateEnd()
-			if !oldStart.IsGood() || !oldEnd.IsGood() {
+			if !oldStart.IsDefined() || !oldEnd.IsDefined() {
 				// If either of the old dates is bad, we don't have a valid
 				// duration, so just use the default duration.
 				return jb.SetDates(

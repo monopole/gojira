@@ -71,7 +71,7 @@ func (d Date) IsGoEpic() bool {
 	return d.Equal(GoEpicDate)
 }
 
-func (d Date) IsGood() bool {
+func (d Date) IsDefined() bool {
 	return !d.IsEmpty() && !d.IsGoEpic()
 }
 
@@ -226,6 +226,7 @@ func (d Date) After(other Date) bool {
 	return d.Year() > other.Year()
 }
 
+// Before isn't just !After. It also means self != other.
 func (d Date) Before(other Date) bool {
 	return !d.After(other) && !d.Equal(other)
 }

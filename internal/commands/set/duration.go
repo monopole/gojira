@@ -54,7 +54,7 @@ func newDurationCmd(jb *myj.JiraBoss) *cobra.Command {
 				return err
 			}
 			start := record.DateStart()
-			if !start.IsGood() {
+			if !start.IsDefined() {
 				start = utils.Today()
 			}
 			start = start.SlideOverWeekend()

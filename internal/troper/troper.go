@@ -192,10 +192,10 @@ func makeIssueRecord(key myj.MyKey, issue *ParsedIssue) *myj.ResponseIssue {
 	if len(issue.RawLabels) > 0 {
 		res.Fields.Labels = issue.RawLabels
 	}
-	if issue.Start.IsGood() {
+	if issue.Start.IsDefined() {
 		res.Fields.CustomStartDate = issue.Start.JiraFormat()
 	}
-	if issue.End.IsGood() {
+	if issue.End.IsDefined() {
 		res.Fields.CustomTargetCompletionDate = issue.End.JiraFormat()
 	}
 	return &res

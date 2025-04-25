@@ -31,6 +31,42 @@ func (dr *DayRange) String() string {
 	return dr.Start().String() + ":" + dr.End().String()
 }
 
+// MakeDayRangeGentle _always_ provides a valid date range, but
+// its value only matches the arguments if they make sense.
+// When the args don't make sense, the returned error won't be nil, but the
+// returned DayRange is still usable as a correction to the arguments.
+func MakeDayRangeGentle(start, end Date) (*DayRange, error) {
+	const defaultDelta = 4 * 7 // ~one month
+	var err error
+	if start.IsDefined() {
+		if end.IsDefined() {
+			if end.Before(start) {
+				err = fmt.Errorf(
+					"end %s precedes start %s; using end minus ~%d days",
+					end, start, defaultDelta)
+				start, end = end, start
+			} else {
+				// This is the only no error path.
+			}
+		} else {
+			err = fmt.Errorf("end undefined, using ~%d days", defaultDelta)
+			end = start.AddDays(defaultDelta).SlideBeforeWeekend()
+		}
+	} else {
+		if end.IsDefined() {
+			err = fmt.Errorf(
+				"bad start date %s; using end minus ~%d days", start, defaultDelta)
+			start = end.AddDays(-defaultDelta).SlideOverWeekend()
+		} else {
+			err = fmt.Errorf(
+				"both end and start dates undefined, pushed to one month from now")
+			start = Today().AddDays(28).SlideOverWeekend()
+			end = start.AddDays(defaultDelta).SlideOffWeekend()
+		}
+	}
+	return makeDayRange0(start, end), err
+}
+
 // MakeRangeFromStringPair makes an instance of DayRange
 // from a string like 2006-01-02:2006-01-02
 func MakeRangeFromStringPair(arg string) (*DayRange, error) {
@@ -46,7 +82,12 @@ func MakeRangeFromStringPair(arg string) (*DayRange, error) {
 	if err != nil {
 		return nil, err
 	}
-	return MakeDayRange0(start, end)
+	return MakeDayRangeGentle(start, end)
+}
+
+// makeDayRange0 returns a DayRange that might have a negative dayCount.
+func makeDayRange0(start, end Date) *DayRange {
+	return &DayRange{date: start, dayCount: start.DayCount(end)}
 }
 
 // MakeDayRange1 makes an instance of DayRange from the given arguments.
@@ -133,12 +174,9 @@ func (dr *DayRange) PrettyRange() string {
 // RoundToMondayAndFriday moves the start date to the nearest Monday
 // and the end date to the nearest Friday.
 func (dr *DayRange) RoundToMondayAndFriday() *DayRange {
-	d2, err := MakeDayRange0(
+	d2, _ := MakeDayRangeGentle(
 		dr.Start().SlideOverWeekend().BackToMonday(),
 		dr.End().SlideBeforeWeekend().ForwardToFriday())
-	if err != nil {
-		panic(err)
-	}
 	return d2
 }
 
@@ -350,40 +388,4 @@ func (dr *DayRange) DayHeaders() (string, string) {
 	b1.WriteByte(emptySpace)
 	b2.WriteByte(emptySpace)
 	return b1.String(), b2.String()
-}
-
-func MakeDayRange0(start, end Date) (*DayRange, error) {
-	const defaultDelta = 4 * 7 // ~one month
-	var err error
-	if start.IsGood() {
-		if end.IsGood() {
-			if end.Before(start) {
-				err = fmt.Errorf(
-					"start=%s doesn't precede end=%s; swapping",
-					start, end)
-				start, end = end, start
-			}
-		} else {
-			err = fmt.Errorf(
-				"bad end date %s; using start plus ~%d days", end, defaultDelta)
-			end = start.AddDays(defaultDelta).SlideBeforeWeekend()
-		}
-	} else {
-		if end.IsGood() {
-			err = fmt.Errorf(
-				"bad start date %s; using end minus ~%d days", start, defaultDelta)
-			start = end.AddDays(-defaultDelta).SlideOverWeekend()
-		} else {
-			err = fmt.Errorf(
-				"bad start=%s and end=%s; using tomorrow and today + ~%d days",
-				start, end, defaultDelta)
-			start = Today().AddDays(1).SlideOverWeekend()
-			end = start.AddDays(defaultDelta).SlideOffWeekend()
-		}
-	}
-	return makeDr(start, end), err
-}
-
-func makeDr(start, end Date) *DayRange {
-	return &DayRange{date: start, dayCount: start.DayCount(end)}
 }

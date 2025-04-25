@@ -14,13 +14,12 @@ func newCalCmd(jb *myj.JiraBoss) *cobra.Command {
 	var (
 		calP        report.CalParams
 		flagPrevVal string
-		prevDays    int
 	)
 	const (
 		flagPrevName    = "prev"
-		flagPrevDefault = "2w"
+		flagPrevDefault = "1m"
+		durationDefault = "5m"
 	)
-	dayCount := 4 * 30 // ~ four months
 	c := &cobra.Command{
 		Use:   "cal [duration]",
 		Short: "Show epic calendar",
@@ -38,14 +37,20 @@ func newCalCmd(jb *myj.JiraBoss) *cobra.Command {
 `,
 		SilenceUsage: true,
 		Args: func(_ *cobra.Command, args []string) (err error) {
+			var (
+				dayCount int
+				prevDays int
+			)
 			if len(args) > 1 {
 				return fmt.Errorf("just specify a duration")
 			}
-			if len(args) == 1 {
-				dayCount, err = utils.ConvertToDayCount(args[0])
-				if err != nil {
-					return err
-				}
+			duration := durationDefault
+			if len(args) > 0 {
+				duration = args[0]
+			}
+			dayCount, err = utils.ConvertToDayCount(duration)
+			if err != nil {
+				return err
 			}
 			prevDays, err = utils.ConvertToDayCount(flagPrevVal)
 			if err != nil {
@@ -65,7 +70,12 @@ func newCalCmd(jb *myj.JiraBoss) *cobra.Command {
 					epicMap[k] = v
 				}
 			}
-			return report.DoCal(os.Stdout, epicMap, calP)
+			err := report.DoCal(os.Stdout, epicMap, calP)
+			if err != nil {
+				utils.DoErr1(err.Error())
+				utils.DoErr1("use the '" + fixDatesCmd + "' command to see and repair errors")
+			}
+			return nil
 		},
 	}
 	c.Flags().BoolVar(&calP.UseColor, "color", true, "use colors")

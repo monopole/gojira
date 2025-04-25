@@ -3,11 +3,12 @@ package myj
 import (
 	"fmt"
 	"io"
+	"log"
 
 	"github.com/monopole/gojira/internal/utils"
 )
 
-const FlagFixDatesName = "fix-dates"
+const FlagDoIt = "go"
 
 type Graph struct {
 	nodes map[MyKey]*Node
@@ -27,6 +28,7 @@ type Node struct {
 	status         IssueStatus
 	title          string
 	originalStart  utils.Date
+	originalEnd    utils.Date
 	startD         utils.Date
 	endD           utils.Date
 	visitCount     int
@@ -62,9 +64,9 @@ func (n *Node) digraphLabel() string {
 		"%s\n%s\n%s",
 		n.key,
 		func() string {
-			dr, err := utils.MakeDayRange0(n.startD, n.endD)
+			dr, err := utils.MakeDayRangeGentle(n.startD, n.endD)
 			if err != nil {
-				return "(bad date settings)"
+				return "(" + utils.Ellipsis(err.Error(), 20) + ")"
 			}
 			return dr.PrettyRange()
 		}(),
@@ -137,35 +139,52 @@ func (g *Graph) ReportMisOrdering(w io.Writer) {
 func (g *Graph) ReportWeekends(w io.Writer) {
 	for _, n := range g.Nodes() {
 		if n.startD.IsWeekend() {
-			_, _ = fmt.Fprintf(w, "Oops, %12s starts on a %s (%s).\n",
+			_, _ = fmt.Fprintf(w, "%12s starts on a %s (%s), pushing to Mon.\n",
 				n.key, n.startD.Weekday(), n.startD.Brief())
+			n.startD = n.startD.SlideOverWeekend()
 		}
 		if n.endD.IsWeekend() {
-			_, _ = fmt.Fprintf(w, "Oops, %12s   ends on a %s (%s).\n",
+			_, _ = fmt.Fprintf(w, "%12s ends on a %s (%s), pulling to Fri.\n",
 				n.key, n.endD.Weekday(), n.endD.Brief())
+			n.endD = n.endD.SlideBeforeWeekend()
 		}
 	}
 }
 
-func (g *Graph) ReportNodes(w io.Writer) {
-	for node := range g.nodes {
-		_, _ = fmt.Fprintf(w, "%12s has %3d parents and %3d children %s\n",
-			node.String(),
-			len(g.nodes[node].dependsOn),
-			len(g.nodes[node].isDependedOnBy),
+func (g *Graph) ScanAndReportNodes(w io.Writer) {
+	for key := range g.nodes {
+		node := g.nodes[key]
+		dr, dateErr := utils.MakeDayRangeGentle(node.startD, node.endD)
+		if dateErr != nil {
+			node.startD = dr.Start()
+			node.endD = dr.End()
+		}
+		_, _ = fmt.Fprintf(
+			w,
+			"%12s has %3d parents, %3d children %s %s\n",
+			key.String(),
+			len(node.dependsOn),
+			len(node.isDependedOnBy),
 			func() string {
-				if len(g.nodes[node].dependsOn) == 0 &&
-					len(g.nodes[node].isDependedOnBy) == 0 {
-					return "_WUT_"
+				if len(node.dependsOn) == 0 &&
+					len(node.isDependedOnBy) == 0 {
+					return "Isolated epic!"
 				}
-				if len(g.nodes[node].dependsOn) == 0 {
+				if len(node.dependsOn) == 0 {
 					return "ROOT"
 				}
-				if len(g.nodes[node].isDependedOnBy) == 0 {
+				if len(node.isDependedOnBy) == 0 {
 					return "LEAF"
 				}
 				return ""
-			}())
+			}(),
+			func() string {
+				if dateErr != nil {
+					return dateErr.Error()
+				}
+				return ""
+			}(),
+		)
 	}
 }
 
@@ -175,16 +194,16 @@ func (g *Graph) resetVisits() {
 	}
 }
 
-func (g *Graph) resetOriginalStart() {
+func (g *Graph) SaveOriginalDates() {
 	for _, node := range g.Nodes() {
 		node.originalStart = node.startD
+		node.originalEnd = node.endD
 	}
 }
 
-// MaybeChangeInMemoryDates might change the start-end dates of nodes
-// to fix ordering problems or tighten wide gaps.
-func (g *Graph) MaybeChangeInMemoryDates(tighten bool) {
-	g.resetOriginalStart()
+// MaybeShiftDependentsLater might push dependent epics out in time to
+// start after their dependencies end.
+func (g *Graph) MaybeShiftDependentsLater() {
 	g.resetVisits()
 	for _, node := range g.nodes {
 		if len(node.dependsOn) == 0 {
@@ -193,20 +212,23 @@ func (g *Graph) MaybeChangeInMemoryDates(tighten bool) {
 			node.MaybeShiftDependentsLater()
 		}
 	}
-	if tighten {
-		g.resetVisits()
-		for _, node := range g.nodes {
-			if len(node.isDependedOnBy) == 0 {
-				// This node is a leaf, presumably a project endpoint as
-				// nothing depends on it.
-				node.MaybeShiftEarlier()
-			}
+}
+
+// MaybeShiftEarlier tries to tighten up the schedule without
+// violating dependencies.
+func (g *Graph) MaybeShiftEarlier() {
+	g.resetVisits()
+	for _, node := range g.nodes {
+		if len(node.isDependedOnBy) == 0 {
+			// This node is a leaf, presumably a project endpoint as
+			// nothing depends on it.
+			node.MaybeShiftEarlier()
 		}
 	}
 }
 
 // arbitrary
-const maxVisitsPerNode = 50
+const maxVisitsPerNode = 200
 
 // MaybeShiftDependentsLater wants a graph in which no child starts
 // before the parent ends.
@@ -219,7 +241,7 @@ func (n *Node) MaybeShiftDependentsLater() {
 			continue
 		}
 		if !child.startD.After(n.endD) {
-			// This is what needs to be fixed.
+			// This is a problem.
 
 			// A given child may have more than one parent in a digraph,
 			// e.g. where several epics block, say, the final epic.
@@ -283,8 +305,8 @@ func (n *Node) cycleCheck() {
 	n.visitCount++
 	if n.visitCount > maxVisitsPerNode {
 		err := fmt.Errorf(
-			"visited %q %d times; either a cycle or this project is loco",
+			"visited %q %d times; use 'dot' command to examine graph for cycle, and 'block --remove' to fix",
 			n.key.String(), n.visitCount)
-		panic(err)
+		log.Fatal(err)
 	}
 }

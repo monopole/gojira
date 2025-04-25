@@ -263,16 +263,32 @@ func (jb *JiraBoss) GetEpics() (result map[MyKey]*ResponseIssue) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	return jb.makeEpicMap(epics, false)
+}
+
+// GetEpicsWithPlaceholder returns GetEpics plus a known placeholder
+// to accumulate orphan stories.
+func (jb *JiraBoss) GetEpicsWithPlaceholder() (result map[MyKey]*ResponseIssue) {
+	epics, err := jb.DoPagedSearch(jb.JqlEpics())
+	if err != nil {
+		log.Fatal(err)
+	}
+	return jb.makeEpicMap(epics, true)
+}
+
+func (jb *JiraBoss) makeEpicMap(
+	found []ResponseIssue, placeHold bool) (result map[MyKey]*ResponseIssue) {
 	result = make(map[MyKey]*ResponseIssue)
-	// Make a placeholder for unknown epics
-	result[jb.placeholderEpic.MakeMyKey()] = jb.placeholderEpic
-	for i := range epics {
-		key := epics[i].MakeMyKey()
+	if placeHold {
+		result[jb.placeholderEpic.MakeMyKey()] = jb.placeholderEpic
+	}
+	for i := range found {
+		key := found[i].MakeMyKey()
 		_, ok := result[key]
 		if ok {
 			log.Fatal(fmt.Errorf("epic %s appears more than once", key))
 		}
-		result[key] = &epics[i]
+		result[key] = &found[i]
 	}
 	return
 }
@@ -501,21 +517,24 @@ func (jb *JiraBoss) WriteDates(doIt bool, nodes map[MyKey]*Node) error {
 	proposedChangeCount := 0
 	success := 0
 	for key, node := range nodes {
-		if node.originalStart != node.startD {
+		if node.originalStart != node.startD ||
+			node.originalEnd != node.endD {
 			proposedChangeCount++
 			_, _ = fmt.Fprintf(
 				os.Stderr,
-				"Start of %3d %s from %s to %s (%4d days)\n",
+				"%4d %s from%5d days duration starting on %s to%5d days duration starting on %s\n",
 				key.Num,
 				func() string {
 					if doIt {
-						return "moves"
+						return "changes"
 					}
-					return "could move"
+					return "should change"
 				}(),
+				node.originalStart.DayCount(node.originalEnd),
 				node.originalStart.String(),
+				node.startD.DayCount(node.endD),
 				node.startD.String(),
-				node.originalStart.DayCount(node.startD))
+			)
 			if doIt {
 				if err := jb.SetDates(
 					key.Num, node.startD, node.endD); err == nil {
@@ -536,7 +555,7 @@ func (jb *JiraBoss) WriteDates(doIt bool, nodes map[MyKey]*Node) error {
 			utils.DoErrF(`
 Redo this with --%s to move these %d dates,
 or do them individually with 'set start' and 'set duration'.`,
-				FlagFixDatesName, proposedChangeCount)
+				FlagDoIt, proposedChangeCount)
 		}
 	} else {
 		utils.DoErrF("No changes proposed.\n")
