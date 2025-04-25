@@ -14,7 +14,7 @@ func newDurationCmd(jb *myj.JiraBoss) *cobra.Command {
 	)
 	c := &cobra.Command{
 		Use:   "duration {issue} {duration}",
-		Short: `Set the duration for an issue in days, weeks or months`,
+		Short: `Set the work duration for an issue in days, weeks or months`,
 		Example: `
   The following commands are equivalent for setting the 
   duration of issue 99 to 2 months.
@@ -24,9 +24,9 @@ func newDurationCmd(jb *myj.JiraBoss) *cobra.Command {
     set duration 99 60d
 
   The effect of this is to set the "Target Completion Date" of issue
-  99 to be 2 months after it's start date.
+  99 to be 2 months after its start date.
 
-  If the start date isn't set, TODAY will be set as the start date.
+  If the start date isn't set, it will be initialized to today (` + utils.Today().String() + `).
 `,
 		Args: func(_ *cobra.Command, args []string) (err error) {
 			if len(args) < 1 {

@@ -17,19 +17,21 @@ func newStartCmd(jb *myj.JiraBoss) *cobra.Command {
 	)
 	const defaultWeeks = 4
 	c := &cobra.Command{
-		Use:   "start {issue} {2025-jan-1} {duration}",
-		Short: `Set start date (default: today) for some issue`,
+		Use:   "start {issue} {date}",
+		Short: `Set the work start date for some issue`,
 		Example: `
   To start issue (story, epic, etc.) 99 on april 1, 2025:
 
     set start 99 2025-apr-1
 
-  If year missing, defaults to current year, e.g 'apr-1'' is sufficient.
+  An omitted year defaults to current year, e.g 'apr-1'' is sufficient.
+  If the date is entirely omitted, today (` + utils.Today().String() + `) is used.
 
-  The existing end date will be shifted to keep the duration the same.
+  The existing _end_ date will be shifted to keep the duration the same.
 
   If there is no existing end date, it will be set to establish
   a duration of ` + strconv.Itoa(defaultWeeks) + ` weeks.
+  One can change this with 'set duration'.
 `,
 		Args: func(_ *cobra.Command, args []string) (err error) {
 			if len(args) < 1 {

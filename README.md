@@ -50,9 +50,12 @@ gojira help
 
 To avoid specifying flags, use:
 ```bash
-export JIRA_HOST=jira.acmecorp.com      # domain of the host running the Jira web UX and REST API
-export JIRA_API_TOKEN=whatever          # an API token obtained from JIRA_HOST
-export JIRA_PROJECT=BOB                 # your favorite Jira project
+# domain of the host running the Jira web UX and REST API
+export JIRA_HOST=jira.acmecorp.com
+# an API token obtained from JIRA_HOST
+export JIRA_API_TOKEN=whatever
+# your favorite Jira project
+export JIRA_PROJECT=BOB
 ```
 
 Get a value for `JIRA_API_TOKEN` from
