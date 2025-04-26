@@ -2,29 +2,29 @@ package set
 
 import (
 	"fmt"
-	"strconv"
-
 	"github.com/monopole/gojira/internal/myj"
 	"github.com/spf13/cobra"
+	"strconv"
 )
+
+const setNameHelp = `Set a new name (a.k.a. 'summary') for an issue`
 
 func newNameCmd(jb *myj.JiraBoss) *cobra.Command {
 	var issue int
 	var name string
 	c := &cobra.Command{
-		Use:   "name {number} \"the new name\"",
-		Short: `Set a new name for an issue`,
+		Use:   "name \"The new name\" {issueNum} ",
+		Short: setNameHelp,
+		Long: setNameHelp + `
+Use quotes around the new name.`,
 		Args: func(_ *cobra.Command, args []string) (err error) {
-			if len(args) < 2 {
+			if len(args) != 2 {
 				return fmt.Errorf(
-					"specify issue number and its new name")
+					"specify the name in quotas and the issue number")
 			}
-			issue, err = strconv.Atoi(args[0])
-			if err != nil {
-				return err
-			}
-			name = args[1]
-			return nil
+			name = args[0]
+			issue, err = strconv.Atoi(args[1])
+			return err
 		},
 		SilenceUsage: true,
 		RunE: func(_ *cobra.Command, _ []string) error {

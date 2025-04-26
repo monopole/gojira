@@ -75,11 +75,11 @@ func NewGoJiraCommand() *cobra.Command {
 	)
 	func(set *pflag.FlagSet) {
 		set.StringVarP(&jiraArgs.Project, "project", "p", "",
-			fmt.Sprintf("jira project (overrides $%s)", envJiraProject))
-		set.StringVarP(&jiraArgs.Host, "jira-host", "j", "",
-			fmt.Sprintf("jira host (overrides $%s)", envJiraHost))
+			fmt.Sprintf("Jira project (overrides $%s)", envJiraProject))
+		set.StringVarP(&jiraArgs.Host, "host", "j", "",
+			fmt.Sprintf("Jira host (overrides $%s)", envJiraHost))
 		set.StringVarP(&jiraArgs.Token, flagJiraToken, "t", "",
-			fmt.Sprintf("access token for the given jira host (overrides $%s)",
+			fmt.Sprintf("access token for the given Jira host (overrides $%s)",
 				envJiraToken))
 	}(c.PersistentFlags())
 

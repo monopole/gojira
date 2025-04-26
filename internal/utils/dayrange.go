@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+	"unicode"
 )
 
 // DayRange is a specific calendar start day (year, month, day number) paired
@@ -31,8 +32,17 @@ func (dr *DayRange) String() string {
 	return dr.Start().String() + ":" + dr.End().String()
 }
 
-// MakeDayRangeGentle _always_ provides a valid date range, but
-// its value only matches the arguments if they make sense.
+// MakeDayRangeSimple makes an instance of DayRange from the given arguments.
+// Fails if dayCount < 1.
+func MakeDayRangeSimple(start Date, dayCount int) (*DayRange, error) {
+	if dayCount < 1 {
+		return nil, fmt.Errorf("daycount of %d is not >= 1", dayCount)
+	}
+	return &DayRange{date: start, dayCount: dayCount}, nil
+}
+
+// MakeDayRangeGentle _always_ provides a valid date range (dayCount > 0),
+// but its value only matches the arguments if they make sense.
 // When the args don't make sense, the returned error won't be nil, but the
 // returned DayRange is still usable as a correction to the arguments.
 func MakeDayRangeGentle(start, end Date) (*DayRange, error) {
@@ -64,7 +74,12 @@ func MakeDayRangeGentle(start, end Date) (*DayRange, error) {
 			end = start.AddDays(defaultDelta).SlideOffWeekend()
 		}
 	}
-	return makeDayRange0(start, end), err
+	dayCount := start.DayCount(end)
+	if dayCount < 1 {
+		// This is an assertion.
+		panic("you screwed up repairing the dates")
+	}
+	return &DayRange{date: start, dayCount: dayCount}, err
 }
 
 // MakeRangeFromStringPair makes an instance of DayRange
@@ -83,28 +98,6 @@ func MakeRangeFromStringPair(arg string) (*DayRange, error) {
 		return nil, err
 	}
 	return MakeDayRangeGentle(start, end)
-}
-
-// makeDayRange0 returns a DayRange that might have a negative dayCount.
-func makeDayRange0(start, end Date) *DayRange {
-	return &DayRange{date: start, dayCount: start.DayCount(end)}
-}
-
-// MakeDayRange1 makes an instance of DayRange from the given arguments.
-func MakeDayRange1(startS string, dayCount int) (*DayRange, error) {
-	start, err := ParseDate(startS)
-	if err != nil {
-		return nil, err
-	}
-	return MakeDayRange2(start, dayCount)
-}
-
-// MakeDayRange2 makes an instance of DayRange from the given arguments.
-func MakeDayRange2(start Date, dayCount int) (*DayRange, error) {
-	if dayCount < 1 {
-		return nil, fmt.Errorf("daycount of %d is not >= 1", dayCount)
-	}
-	return &DayRange{date: start, dayCount: dayCount}, nil
 }
 
 func (dr *DayRange) Contains(d Date) bool {
@@ -186,8 +179,9 @@ const (
 	arrowLeftSmall  = '←' //  '⮜'  '◄'
 	arrowRightBig   = '▷' // '⊳'  '⮞'  '►'
 	arrowLeftBig    = '◁' // '◁' '◅' '⮜'  '◄'
-	circleOpen      = '○' // '○' '⬤'
-	circleClosed    = '⬤'
+	heroSpacer      = '⁃' // '‧'
+	circleOpen      = '○' // '‧', '○' '⬤'
+	circleClosed    = '⬤' // '‧'
 	vertBar         = '│'
 	hyphen          = '-' // '∙' '─' '-'
 	emptySpace      = ' '
@@ -196,13 +190,19 @@ const (
 
 type MyBuff struct {
 	useColors bool
+	tIndex    int
+	hero      []rune
 	color     ColorString
 	bytes.Buffer
 }
 
+func (b *MyBuff) incHeroIndex() {
+	b.tIndex = (b.tIndex + 1) % len(b.hero)
+}
+
 func (b *MyBuff) writeTodaySymbol() {
 	if b.useColors {
-		b.WriteString(string(TerminalColorGray))
+		b.WriteString(TerminalColorGray)
 		b.WriteRune(circleClosed)
 		b.WriteString(TerminalReset)
 	} else {
@@ -213,8 +213,9 @@ func (b *MyBuff) writeTodaySymbol() {
 func (b *MyBuff) writeDaySymbol() {
 	if b.useColors {
 		b.WriteString(string(b.color))
-		b.WriteRune(circleOpen)
+		b.WriteRune(b.hero[b.tIndex])
 		b.WriteString(TerminalReset)
+		b.incHeroIndex()
 	} else {
 		b.WriteRune(hyphen)
 	}
@@ -249,6 +250,27 @@ func (b *MyBuff) writeDaySeparator() {
 	}
 }
 
+func massageHero(s string) []rune {
+	const minimum = 5
+	result := make([]rune, 0, len(s))
+	for _, r := range s {
+		if !unicode.IsSpace(r) {
+			result = append(result, r)
+		}
+	}
+	padding := func() rune {
+		if len(result) == 0 {
+			return circleOpen
+		}
+		return '_'
+	}()
+	//result = append(result, padding)
+	for len(result) < minimum {
+		result = append(result, padding)
+	}
+	return result
+}
+
 // AsIntersect accepts an "outer" DayRange and returns a string like "  ---".
 //
 // Each character in the return represents one business day (Mon-Fri).
@@ -258,7 +280,7 @@ func (b *MyBuff) writeDaySeparator() {
 // be at least five and will always be a multiple of five, plus the as many
 // weekend characters as needed.
 //
-// If the character is a '-', then that day lies in both DayRanges.
+// If the character is not ' ', then that day lies in both DayRanges.
 // If the character is a ' ', then that day is missing from one of the ranges.
 //
 // If the first character is '<', then there's an intersection to the left
@@ -267,11 +289,13 @@ func (b *MyBuff) writeDaySeparator() {
 // If the last character is a '>' then there's an intersection to the right
 // that's not shown.
 //
-// If the character is a '+', it's today.
+// If the character is a '+' (or something special), it's _today_.
 func (dr *DayRange) AsIntersect(
-	today Date, outer *DayRange, useColor bool, clr ColorString) string {
+	today Date, assignee string,
+	outer *DayRange, useColor bool, clr ColorString) string {
 	outer = outer.RoundToMondayAndFriday()
 	var b MyBuff
+	b.hero = massageHero(assignee)
 	b.useColors = useColor
 	b.color = clr
 	outDay := outer.Start().AddDays(-1)
@@ -307,6 +331,7 @@ func (dr *DayRange) AsIntersect(
 				b.WriteByte(emptySpace)
 			}
 		}
+		// b.incHeroIndex()
 	}
 	if dr.EndsAfter(outer) {
 		b.writeEndsLaterSymbol()

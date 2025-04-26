@@ -58,10 +58,9 @@ func newCalCmd(jb *myj.JiraBoss) *cobra.Command {
 					flagPrevName, flagPrevVal, err)
 			}
 			start := utils.Today().SlideOverWeekend().AddDays(-prevDays)
-			calP.Outer, err = utils.MakeDayRange2(start, dayCount+prevDays)
+			calP.Outer, err = utils.MakeDayRangeSimple(start, dayCount+prevDays)
 			return err
 		},
-
 		RunE: func(cmd *cobra.Command, args []string) error {
 			orgEpicMap := jb.GetEpics()
 			epicMap := make(map[myj.MyKey]*myj.ResponseIssue)
@@ -79,6 +78,7 @@ func newCalCmd(jb *myj.JiraBoss) *cobra.Command {
 		},
 	}
 	c.Flags().BoolVar(&calP.UseColor, "color", true, "use colors")
+	c.Flags().BoolVar(&calP.ShowAssignee, "assignee", true, "show assignee")
 	c.Flags().BoolVar(&calP.ShowHeaders, "header", true, "show date headers")
 	c.Flags().IntVar(&calP.FieldSizeName, "name-size", 70, "size of name field")
 	c.Flags().IntVar(&calP.LineSetSize, "line-set-size", 3, "number of lines in a set")

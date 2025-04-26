@@ -231,11 +231,17 @@ func (d Date) Before(other Date) bool {
 	return !d.After(other) && !d.Equal(other)
 }
 
+// hourCount is the number of hours between two dates.
+// If the dates match, the hour count is zero.
+// The result can be negative.
 func (d Date) hourCount(end Date) float64 {
 	return end.ts.Sub(d.ts).Hours()
 }
 
-// DayCount is the number of days from this to end, inclusive
+// DayCount is the number of days from 'this' to the argument, inclusive.
+// If the dates match, the DayCount is 1, by definition.
+// Returns zero if the argument is the day before, and negative
+// values for dates further back in time.
 func (d Date) DayCount(end Date) int {
 	// Because of a daylight saving time switch,
 	// this might not be divisible by 24, so we round it.

@@ -1,6 +1,7 @@
 [Jira]: https://www.atlassian.com/software/jira
 [github.com/ankitpokhrel/jira-cli]: https://github.com/ankitpokhrel/jira-cli
 [`dot`]: https://graphviz.org/docs/layouts/dot
+[dot]: https://graphviz.org/docs/layouts/dot
 [`jira-cli`]: #jira-cli-advertisment
 [`jiraboss.go`]: internal/myj/jiraboss.go
 [custom fields]: internal/myj/customfields.go
@@ -55,7 +56,7 @@ export JIRA_HOST=jira.acmecorp.com
 # an API token obtained from JIRA_HOST
 export JIRA_API_TOKEN=whatever
 # your favorite Jira project
-export JIRA_PROJECT=BOB
+export JIRA_PROJECT=PEACH
 ```
 
 Get a value for `JIRA_API_TOKEN` from
@@ -65,15 +66,14 @@ Get a value for `JIRA_API_TOKEN` from
 
 ### jira-cli (_advertisment_)
 
-> [github.com/ankitpokhrel/jira-cli]
+[github.com/ankitpokhrel/jira-cli]
+is a useful general jira tool.
 
-is a super useful general jira tool and can be installed with
-
+It installs as a binary called  `jira`:
 ```bash
 go install github.com/ankitpokhrel/jira-cli/cmd/jira@latest
 ```
 
-The app installs as a binary called  `jira`.
 
 Create an epic list:
 
@@ -83,19 +83,18 @@ jira epic list --order-by key --reverse --plain
 
 Look at one issue:
 ```bash
-jira issue view LEMON-33
+jira issue view PEACH-33
 ```
 
 ### Why [yet another] gojira?
-Once you learn the API, it's easier to use 
-than the Jira web UX.
 
 I needed
-* particular reporting:
-  * dependency graph images for long term sanity check and
-  * fast terminal-based calendars for daily sanity checks,
+* [dot]-style dependency graph images for dependency checks and reporting,
+* terminal-based (fast) calendar for daily status checks,
 * [custom fields],
-* safe date checking and repair.
+* bulk date checking and repair,
+* export/import to allow bulk edit of issue titles, labels, 
+  dates and epic groupings.
 
 `jira-cli`, although broad and fast,
 can't know how and why you've customized Jira and
@@ -105,3 +104,4 @@ shell to drive `jira-cli`, `curl`, `awk` etc.
 Unwieldy shell code led to a
 switch to Go to hit the Jira API directly reusing
 some old code ([snips]).
+

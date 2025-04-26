@@ -8,5 +8,5 @@ import (
 var Debug bool
 
 func FlagsAddDebug(set *pflag.FlagSet) {
-	set.BoolVar(&Debug, "debug", false, "enable printing of debug data")
+	set.BoolVar(&Debug, "debug", false, "enable printing of debugging info")
 }

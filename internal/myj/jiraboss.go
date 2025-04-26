@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/monopole/gojira/internal/utils"
 )
@@ -18,6 +18,11 @@ type MyJiraArgs struct {
 	Host    string
 	Project string
 	Token   string
+}
+
+type JiraBossIfc interface {
+	Project() string
+	GetOneIssue(int) (*ResponseIssue, error)
 }
 
 // JiraBoss manages requests to the jira api.
@@ -51,19 +56,28 @@ func (jb *JiraBoss) Key(issue int) MyKey {
 	}
 }
 
-// SetEpicLink PUTs an issue to modify the epic link.
-func (jb *JiraBoss) SetEpicLink(issue int, epic int) (err error) {
-	type fieldsToWrite struct {
-		issueOnlyFields
+// RenameIssue renames an issue.
+func (jb *JiraBoss) RenameIssue(n int, name string) error {
+	issue, err := jb.GetOneIssue(n)
+	if err != nil {
+		return err
 	}
 	type requestPutIssue struct {
-		Fields fieldsToWrite `json:"fields"`
+		Fields basicEpicFields `json:"fields"`
 	}
-	var req requestPutIssue
-	req.Fields.CustomEpicLink = jb.Key(epic).String()
+	req := requestPutIssue{
+		Fields: basicEpicFields{
+			CommonIssueAndEpicFields: CommonIssueAndEpicFields{
+				Summary: name,
+			},
+		},
+	}
+	if issue.IsEpic() {
+		// For epics, always make the "short" name match the summary
+		req.Fields.CustomEpicName = name
+	}
 	_, err = jb.punchItChewie(
-		http.MethodPut, req,
-		endpointIssue+"/"+jb.Key(issue).String())
+		http.MethodPut, &req, endpointIssue+"/"+jb.Key(n).String())
 	return err
 }
 
@@ -222,23 +236,6 @@ func (jb *JiraBoss) writeOneIssue(issue *ResponseIssue, epic MyKey) (err error) 
 
 const debug = false
 
-// ClearEpicLink PUTS an issue to clear the CustomFieldEpicLink.
-func (jb *JiraBoss) ClearEpicLink(issue int) (err error) {
-	type fieldsToWrite struct {
-		issueOnlyFields
-		CommonIssueAndEpicFields
-	}
-	type requestPutIssue struct {
-		Fields fieldsToWrite `json:"fields"`
-	}
-	var req requestPutIssue
-	req.Fields.CustomEpicLink = nil
-	_, err = jb.punchItChewie(
-		http.MethodPut, req,
-		endpointIssue+"/"+jb.Key(issue).String())
-	return err
-}
-
 // GetCustomFieldId recovers information about field names that one
 // needs to get what one wants from the API.
 func (jb *JiraBoss) GetCustomFieldId(name string) string {
@@ -254,84 +251,6 @@ func (jb *JiraBoss) GetCustomFieldId(name string) string {
 	}
 	log.Fatalf("custom field '%s' not found", name)
 	return ""
-}
-
-// GetEpics returns a map of issue keys (e.g. project-100) to issue structs,
-// where all the issues happen to be epics.
-func (jb *JiraBoss) GetEpics() (result map[MyKey]*ResponseIssue) {
-	epics, err := jb.DoPagedSearch(jb.JqlEpics())
-	if err != nil {
-		log.Fatal(err)
-	}
-	return jb.makeEpicMap(epics, false)
-}
-
-// GetEpicsWithPlaceholder returns GetEpics plus a known placeholder
-// to accumulate orphan stories.
-func (jb *JiraBoss) GetEpicsWithPlaceholder() (result map[MyKey]*ResponseIssue) {
-	epics, err := jb.DoPagedSearch(jb.JqlEpics())
-	if err != nil {
-		log.Fatal(err)
-	}
-	return jb.makeEpicMap(epics, true)
-}
-
-func (jb *JiraBoss) makeEpicMap(
-	found []ResponseIssue, placeHold bool) (result map[MyKey]*ResponseIssue) {
-	result = make(map[MyKey]*ResponseIssue)
-	if placeHold {
-		result[jb.placeholderEpic.MakeMyKey()] = jb.placeholderEpic
-	}
-	for i := range found {
-		key := found[i].MakeMyKey()
-		_, ok := result[key]
-		if ok {
-			log.Fatal(fmt.Errorf("epic %s appears more than once", key))
-		}
-		result[key] = &found[i]
-	}
-	return
-}
-
-func (jb *JiraBoss) DetermineEpicLink(ir *ResponseIssue) (result MyKey) {
-	str, ok := ir.Fields.CustomEpicLink.(string)
-	if ok && str != "" {
-		return ParseMyKey(str)
-	}
-	return jb.placeholderEpic.MyKey
-}
-
-// GetIssuesGroupedByEpic returns a map of epic keys
-// (issues that happen to be epics),
-// to lists of issues that are in that epic.
-func (jb *JiraBoss) GetIssuesGroupedByEpic(epics map[MyKey]*ResponseIssue) (
-	result map[MyKey]IssueList) {
-	issues, err := jb.DoPagedSearch(jb.JqlIssues())
-	if err != nil {
-		log.Fatal(err)
-	}
-	result = make(map[MyKey]IssueList)
-	for i := range issues {
-		issue := issues[i]
-		epicKey := jb.DetermineEpicLink(&issue)
-		if _, ok := epics[epicKey]; !ok {
-			// Found an issue that points to an unknown epic.
-			// Most likely outside the project.
-			// Look it up so we can print it.
-			var epic *ResponseIssue
-			epic, err = jb.GetOneIssue(epicKey.Num)
-			if err != nil {
-				epic = jb.incrementUnknownEpic()
-			}
-			epic.MyKey = epicKey
-			epics[epicKey] = epic
-		}
-		result[epicKey] = append(result[epicKey], &issue)
-	}
-	for _, v := range result {
-		sort.Sort(v)
-	}
-	return
 }
 
 const (
@@ -439,78 +358,6 @@ func makePlaceHolderEpic(i int, project string) *ResponseIssue {
 	return result
 }
 
-// CreateDiGraph makes a digraph that includes _all_ epics in a project.
-// It's time-consuming.
-func (jb *JiraBoss) CreateDiGraph() (*Graph, error) {
-	epicMap := jb.GetEpics()
-	var nodes = make(map[MyKey]*Node)
-	var edges = make(map[Edge]bool)
-	for k := range epicMap {
-		if k.Num >= UnknownEpicBase {
-			continue
-		}
-		utils.DoErr1("Considering epic " + k.String())
-		issue, err := jb.GetOneIssueByKey(k)
-		if err != nil {
-			return nil, err
-		}
-		if !issue.IsEpic() {
-			err = fmt.Errorf(
-				"GetEpics returned %s which is not an Epic",
-				issue.Key)
-			return nil, err
-		}
-		jb.ConsiderEpic(issue, nodes, edges)
-	}
-	return MakeGraph(nodes, edges), nil
-}
-
-// ConsiderEpic adds the incoming epic to a graph (if not already seen),
-// then looks for epics that block it.
-func (jb *JiraBoss) ConsiderEpic(
-	epic *ResponseIssue, visited map[MyKey]*Node, edges map[Edge]bool) {
-	if _, seen := visited[epic.MyKey]; seen {
-		return
-	}
-	epicKey := epic.MyKey
-	visited[epicKey] = MakeNode(epic)
-	if epicKey.Proj != jb.Project() {
-		// don't recurse into issues from other projects
-		return
-	}
-	for _, link := range epic.Fields.IssueLinks {
-		if link.Type.Name == LinkTypeBlocks && link.InwardIssue.Key != "" {
-			// The incoming epic is blocked by the other
-			other := ParseMyKey(link.InwardIssue.Key)
-			issue, err := jb.GetOneIssueByKey(other)
-			if err != nil {
-				err = fmt.Errorf(
-					"in epic %s, unable to look up blocker %s; %w",
-					epicKey, other, err)
-				utils.DoErr1(err.Error())
-				continue
-			}
-			if other != issue.MyKey {
-				panic(fmt.Errorf(
-					"looked up %s, got %s",
-					other.String(), issue.MyKey.String()))
-			}
-			if !issue.IsEpic() {
-				// Don't include non-epics in the graph, even if they are
-				// blockers, because the graph might feed into other functions
-				// like fixing dates, and we cannot expect date fields on
-				// non-epics to be meaningful. Perhaps control this with flag.
-				utils.DoErrF(
-					"in epic %s, ignoring blockage by (non-epic) %s %s (%s)\n",
-					epicKey, issue.Type(), issue.MyKey, issue.Status())
-				continue
-			}
-			edges[MakeEdge(epicKey, issue.MyKey)] = true
-			jb.ConsiderEpic(issue, visited, edges)
-		}
-	}
-}
-
 // WriteDates actually writes new dates to jira.
 func (jb *JiraBoss) WriteDates(doIt bool, nodes map[MyKey]*Node) error {
 	var lastErr error
@@ -561,4 +408,237 @@ or do them individually with 'set start' and 'set duration'.`,
 		utils.DoErrF("No changes proposed.\n")
 	}
 	return lastErr
+}
+
+// SetDates sets the dates for an issue.
+func (jb *JiraBoss) SetDates(
+	issue int, start, end utils.Date) error {
+	type requestPutIssue struct {
+		Fields CommonIssueAndEpicFields `json:"fields"`
+	}
+	req := requestPutIssue{
+		Fields: CommonIssueAndEpicFields{
+			CustomStartDate:            start.JiraFormat(),
+			CustomTargetCompletionDate: end.JiraFormat(),
+		},
+	}
+	_, err := jb.punchItChewie(
+		http.MethodPut, &req, endpointIssue+"/"+jb.Key(issue).String())
+	return err
+}
+
+func (jb *JiraBoss) CheckIssues(im map[MyKey]IssueList) error {
+	foundLookupError := false
+	foundTypeError := false
+	count := 0
+	for epicKey, issueList := range im {
+		count++
+		utils.DoErrF("Checking list %d with %d issues.\n",
+			count, len(issueList))
+		var (
+			resp *ResponseIssue
+			err  error
+		)
+		resp, err = jb.GetOneIssue(epicKey.Num)
+		if err != nil {
+			utils.DoErrF("Could not find epic %s", epicKey.String())
+			foundLookupError = true
+		} else if !resp.IsEpic() {
+			utils.DoErrF("Why is the non-epic %s in the issue keys?\n", epicKey)
+			foundTypeError = true
+		}
+		for _, issue := range issueList {
+			resp, err = jb.GetOneIssue(issue.MyKey.Num)
+			if err != nil {
+				utils.DoErrF("Could not find issue %s", issue.Key)
+				foundLookupError = true
+				continue
+			}
+
+			if !resp.IsOkayUnderEpic() {
+				foundTypeError = true
+				continue
+			}
+		}
+	}
+	if foundLookupError {
+		return fmt.Errorf(
+			`aborting write due to lookup errors;
+ fix issue numbers or create placeholder issues`)
+	}
+	if foundTypeError {
+		return fmt.Errorf(`aborting write due type errors;
+ if you want to overwrite the types, delete this line`)
+	}
+	return nil
+}
+
+// GetOneIssue recovers info about the issue called {project}-{id}.
+func (jb *JiraBoss) GetOneIssue(issue int) (*ResponseIssue, error) {
+	return jb.GetOneIssueByKey(jb.Key(issue))
+}
+
+// GetOneIssueByKey recovers info about the issue.
+func (jb *JiraBoss) GetOneIssueByKey(issue MyKey) (*ResponseIssue, error) {
+	var (
+		err  error
+		resp ResponseIssue
+		body []byte
+	)
+	body, err = jb.punchItChewie(
+		http.MethodGet, nil,
+		endpointIssue+"/"+issue.String())
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(body, &resp)
+	if err != nil {
+		return nil, fmt.Errorf("trouble unmarshaling issue; %w", err)
+	}
+	resp.SetMyKey()
+	return &resp, nil
+}
+
+// GetTransitionId finds the id of some transition.
+func (jb *JiraBoss) GetTransitionId(issue int, status IssueStatus) (string, error) {
+	type transition struct {
+		Id   string `json:"id"`
+		Name string `json:"name"`
+	}
+	type tranReq struct {
+		Transitions []transition `json:"transitions"`
+	}
+	var (
+		err  error
+		req  tranReq
+		body []byte
+	)
+	body, err = jb.punchItChewie(
+		http.MethodGet, nil,
+		endpointIssue+"/"+jb.Key(issue).String()+"/transitions")
+	if err != nil {
+		return "", err
+	}
+	err = json.Unmarshal(body, &req)
+	if err != nil {
+		return "", fmt.Errorf("trouble unmarshaling issue; %w", err)
+	}
+	for _, t := range req.Transitions {
+		if strings.HasPrefix(t.Name, status.String()) {
+			return t.Id, nil
+		}
+	}
+	return "", fmt.Errorf("unable to find transition to %q", status)
+}
+
+// BlockIssues makes the first issue block the others.
+func (jb *JiraBoss) BlockIssues(blocker int, toBeBlocked []int, comment string) error {
+	var req struct {
+		Type struct {
+			Name string `json:"name"`
+		} `json:"type"`
+		// InwardIssue is the issue doing the blocking
+		InwardIssue struct {
+			Key string `json:"key"`
+		} `json:"inwardIssue"`
+		// OutwardIssue is the issue being blocked.
+		OutwardIssue struct {
+			Key string `json:"key"`
+		} `json:"outwardIssue"`
+		Comment struct {
+			Body string `json:"body,omitempty"`
+		} `json:"comment,omitempty"`
+	}
+	req.Type.Name = LinkTypeBlocks
+	req.InwardIssue.Key = jb.Key(blocker).String()
+	if comment != "" {
+		req.Comment.Body = comment
+	}
+	for _, dependent := range toBeBlocked {
+		req.OutwardIssue.Key = jb.Key(dependent).String()
+		_, err := jb.punchItChewie(http.MethodPost, &req, endpointIssueLink)
+		if err != nil {
+			return err
+		}
+	}
+	utils.DoErrF("%d now blocks %v\n", blocker, toBeBlocked)
+	return nil
+}
+
+// UnBlockIssues deletes the links created by BlockIssues.
+func (jb *JiraBoss) UnBlockIssues(blocker int, blocked []int) error {
+	var (
+		err  error
+		body []byte
+		resp ResponseIssue
+	)
+	body, err = jb.punchItChewie(
+		http.MethodGet, nil,
+		endpointIssue+"/"+jb.Key(blocker).String()+"?expand=issuelinks")
+	if err != nil {
+		return err
+	}
+	if err = json.Unmarshal(body, &resp); err != nil {
+		return fmt.Errorf("trouble unmarshaling issue links; %w", err)
+	}
+	count := 0
+	for _, issue := range blocked {
+		key := jb.Key(issue)
+		for _, link := range resp.Fields.IssueLinks {
+			if link.Type.Name == LinkTypeBlocks &&
+				link.OutwardIssue.Key == key.String() {
+				if err = jb.deleteLink(link.Id); err != nil {
+					return err
+				}
+				count++
+				utils.DoErrF("%d no longer blocks %v\n", blocker, issue)
+				break
+			}
+		}
+	}
+	utils.DoErrF("Deleted %d blocking links.\n", count)
+	return nil
+}
+
+func (jb *JiraBoss) deleteLink(id string) error {
+	_, err := jb.punchItChewie(http.MethodDelete, nil, endpointIssueLink+"/"+id)
+	return err
+}
+
+// MoveIssueToState moves an issue to a new state
+func (jb *JiraBoss) MoveIssueToState(n int, stateId string) error {
+	var req struct {
+		Transition struct {
+			Id string `json:"id"`
+		} `json:"transition"`
+	}
+	req.Transition.Id = stateId
+	_, err := jb.punchItChewie(
+		http.MethodPost, &req, endpointIssue+"/"+jb.Key(n).String()+"/transitions")
+	return err
+}
+
+// GetOneIssueEditMeta recovers metadata (field accessibility)
+// about the issue called {project}-{id}.
+func (jb *JiraBoss) GetOneIssueEditMeta(issue int) (*ResponseEditMeta, error) {
+	var (
+		err  error
+		resp ResponseEditMeta
+		body []byte
+	)
+	body, err = jb.punchItChewie(
+		http.MethodGet, nil,
+		endpointIssue+"/"+jb.Key(issue).String()+"/editmeta")
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(body, &resp)
+	if err != nil {
+		return nil, fmt.Errorf("trouble unmarshaling issue; %w", err)
+	}
+	return &resp, nil
+}
+
+type ResponseEditMeta struct {
+	Fields map[string]any `json:"fields,omitempty"`
 }

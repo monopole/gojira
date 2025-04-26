@@ -22,7 +22,7 @@ func makeSearchRequest(jql string) RequestSearch {
 			// id is a jira internal number with seven or so digits.
 			"id",
 
-			// key is something like BOB-25038.
+			// key is something like PEACH-25038.
 			"key",
 
 			// summary is the issue summary,

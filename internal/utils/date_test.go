@@ -68,26 +68,34 @@ func Test_DateDayCount(t *testing.T) {
 	}
 	tests := map[string]testCase{
 		"t1": {
+			end:      "2025-Mar-02",
+			expected: -1,
+		},
+		"t2": {
+			end:      "2025-Mar-03",
+			expected: 0,
+		},
+		"t3": {
 			end:      "2025-Mar-04",
 			expected: 1,
 		},
-		"t2": {
+		"t4": {
 			end:      "2025-Mar-05",
 			expected: 2,
 		},
-		"t3": {
+		"t5": {
 			end:      "2025-Mar-06",
 			expected: 3,
 		},
-		"t4": {
+		"t6": {
 			end:      "2025-Mar-16",
 			expected: 13,
 		},
-		"t5": {
+		"t7": {
 			end:      "2025-Mar-31",
 			expected: 28,
 		},
-		"t6": {
+		"t8": {
 			end:      "2025-Apr-21",
 			expected: 49,
 		},

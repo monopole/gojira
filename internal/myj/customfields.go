@@ -19,8 +19,8 @@ type issueOnlyFields struct {
 	// link to the epic that contains it (if any).
 	// In an epic, this link is always nil.
 	// In an issue if this is nil, then the issue is not part of an epic.
-	// If it's a string, it's value is something like "BOB-7", where
-	// issue 7 in the BOB project is an epic.
+	// If it's a string, it's value is something like "PEACH-7", where
+	// issue 7 in the PEACH project is an epic.
 	// Making this "any" to allow use of nil to
 	// clear the field in Jira, and NOT allowing omitempty
 	CustomEpicLink any `json:"customfield_12003"`

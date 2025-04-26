@@ -253,7 +253,7 @@ func Test_AsIntersect(t *testing.T) {
 			if err != nil {
 				t.Fatal(err.Error())
 			}
-			x := inner.AsIntersect(today, outer, false, "")
+			x := inner.AsIntersect(today, "", outer, false, "")
 			h1, h2 := outer.DayHeaders()
 			assert.Equal(t, tc.expected, x)
 			assert.Equal(t, tc.header0, outer.MonthHeader())
@@ -338,7 +338,10 @@ func TestDayRange_MakeDayRange(t *testing.T) {
 				dr, err = MakeRangeFromStringPair(tc.dayStart + ":" + tc.dayEnd)
 				assert.NoError(t, err)
 			} else {
-				dr, err = MakeDayRange1(tc.dayStart, tc.dayCount)
+				var start Date
+				start, err = ParseDate(tc.dayStart)
+				assert.NoError(t, err)
+				dr, err = MakeDayRangeSimple(start, tc.dayCount)
 				assert.NoError(t, err)
 			}
 			got := dr.PrettyRange()

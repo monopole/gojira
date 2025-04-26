@@ -7,13 +7,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Makes sure that the name field matches the summary field.
+// https://community.atlassian.com/t5/Jira-questions/Epic-name-vs-Epic-Summary-Do-we-need-both/qaq-p/850442
 func newFixNameCmd(jb *myj.JiraBoss) *cobra.Command {
 	var epics []int
 	c := &cobra.Command{
-		Use:   "fix-name",
-		Short: `Copy the value in an epic's summary field to its name field`,
-		// The name field is stupid, only shows in stories
-		// grouped into that epic.
+		Use:   "fix-name {epicNum}...",
+		Short: `Copy the value in an epic's 'summary' field to its 'name' field`,
+		// The name field seems misleading, it seems to only shows in stories
+		// grouped into that epic, and if it differs from the epic's summary,
+		// it seems like a mistake.
 		Args: func(_ *cobra.Command, args []string) (err error) {
 			if len(args) == 0 {
 				return fmt.Errorf("specify at least one epic number")

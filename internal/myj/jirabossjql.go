@@ -7,14 +7,14 @@ import (
 	"github.com/monopole/gojira/internal/utils"
 )
 
-func (jb *JiraBoss) JqlEpics() string {
+func (jb *JiraBoss) jqlEpics() string {
 	return andTerms(
 		termString("project", RelEqual, jb.Project()),
 		termType(RelEqual, IssueTypeEpic),
 	)
 }
 
-func (jb *JiraBoss) JqlIssues() string {
+func (jb *JiraBoss) jqlIssues() string {
 	return andTerms(
 		termString("project", RelEqual, jb.Project()),
 		termType(RelNotEqual, IssueTypeEpic),
@@ -23,7 +23,7 @@ func (jb *JiraBoss) JqlIssues() string {
 	)
 }
 
-func (jb *JiraBoss) JqlIssuesInEpic(epic string) string {
+func (jb *JiraBoss) jqlIssuesInEpic(epic string) string {
 	return andTerms(
 		termString("project", RelEqual, jb.Project()),
 		termString(CustomFieldEpicLink, RelEqual, epic),

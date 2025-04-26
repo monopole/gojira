@@ -31,6 +31,7 @@ type Node struct {
 	originalEnd    utils.Date
 	startD         utils.Date
 	endD           utils.Date
+	assignee       string
 	visitCount     int
 	dependsOn      []*Node
 	isDependedOnBy []*Node
@@ -38,11 +39,12 @@ type Node struct {
 
 func MakeNode(epic *ResponseIssue) *Node {
 	return &Node{
-		key:    epic.MyKey,
-		status: epic.Status(),
-		title:  epic.MySummary(),
-		startD: epic.DateStart(),
-		endD:   epic.DateEnd(),
+		key:      epic.MyKey,
+		status:   epic.Status(),
+		title:    epic.MySummary(),
+		startD:   epic.DateStart(),
+		endD:     epic.DateEnd(),
+		assignee: epic.AssigneeLdap(),
 	}
 }
 
@@ -61,7 +63,7 @@ func (n *Node) writeDiGraphNode(w io.Writer) {
 
 func (n *Node) digraphLabel() string {
 	return fmt.Sprintf(
-		"%s\n%s\n%s",
+		"%s\n%s %s\n%s",
 		n.key,
 		func() string {
 			dr, err := utils.MakeDayRangeGentle(n.startD, n.endD)
@@ -70,6 +72,7 @@ func (n *Node) digraphLabel() string {
 			}
 			return dr.PrettyRange()
 		}(),
+		n.assignee,
 		utils.ShortLines(n.title))
 }
 

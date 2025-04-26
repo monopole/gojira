@@ -2,10 +2,9 @@ package report
 
 import (
 	"fmt"
-	"io"
-
 	"github.com/monopole/gojira/internal/myj"
 	"github.com/monopole/gojira/internal/utils"
+	"io"
 )
 
 const (
@@ -21,6 +20,7 @@ type CalParams struct {
 	FieldSizeName int
 	ShowHeaders   bool
 	LineSetSize   int
+	ShowAssignee  bool
 }
 
 func DoCal(
@@ -70,7 +70,14 @@ func DoCal(
 		_, _ = fmt.Fprint(w, spacer)
 		_, _ = fmt.Fprint(
 			w, dr.AsIntersect(
-				today, p.Outer, p.UseColor,
+				today,
+				func() string {
+					if p.ShowAssignee {
+						return epic.AssigneeName()
+					}
+					return ""
+				}(),
+				p.Outer, p.UseColor,
 				myj.StatusColor(epic.Status(), myj.ColorKindTerminal)))
 		_, _ = fmt.Fprintln(w)
 		lineCount++

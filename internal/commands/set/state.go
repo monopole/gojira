@@ -27,8 +27,7 @@ func newStateCmd(jb *myj.JiraBoss) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			args = args[1:]
-			issues, err = utils.ConvertToInt(args)
+			issues, err = utils.ConvertToInt(args[1:])
 			return err
 		},
 		SilenceUsage: true,

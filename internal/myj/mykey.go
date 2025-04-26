@@ -21,14 +21,14 @@ func (mk MyKey) String() string {
 func ParseMyKey(k string) (result MyKey) {
 	parts := strings.Split(k, "-")
 	if len(parts) != 2 {
-		log.Fatalf("expected something like BOB-1234, but see %q", k)
+		log.Fatalf("expected something like PEACH-1234, but see %q", k)
 	}
 	result.Proj = strings.ToUpper(parts[0])
 	var err error
 	result.Num, err = strconv.Atoi(parts[1])
 	if err != nil {
 		log.Fatalf(
-			"Not number; expected something like BOB-1234, but got %q", k)
+			"Not number; expected something like PEACH-1234, but got %q", k)
 	}
 	return
 }
