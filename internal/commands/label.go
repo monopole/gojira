@@ -38,7 +38,7 @@ To remove it:
 			return jb.LabelIssues(label, issues, remove)
 		},
 	}
-	c.Flags().BoolVar(
-		&remove, "remove", false, "remove the label instead of add the label")
+	c.Flags().BoolVarP(
+		&remove, "remove", "r", false, "remove the label instead of add the label")
 	return c
 }

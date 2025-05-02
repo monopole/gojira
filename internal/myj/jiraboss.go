@@ -81,6 +81,28 @@ func (jb *JiraBoss) RenameIssue(n int, name string) error {
 	return err
 }
 
+// AssignIssues assigns or unassigns an issue.
+func (jb *JiraBoss) AssignIssues(issues []int, ldap string) error {
+	var req struct {
+		Fields struct {
+			Assignee struct {
+				Name any `json:"name"` // Don't omitempty
+			} `json:"assignee"`
+		} `json:"fields"`
+	}
+	if ldap != "" {
+		req.Fields.Assignee.Name = ldap
+	}
+	for _, n := range issues {
+		_, err := jb.punchItChewie(
+			http.MethodPut, &req, endpointIssue+"/"+jb.Key(n).String())
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // LabelIssues adds or removes a label from the given issues.
 func (jb *JiraBoss) LabelIssues(
 	label string, issues []int, remove bool) error {
@@ -128,11 +150,10 @@ func (jb *JiraBoss) LabelIssues(
 }
 
 func (jb *JiraBoss) writeLabels(issue int, labels []string) (err error) {
-	type fieldsToWrite struct {
-		Labels []string `json:"labels"` // Don't omitempty!
-	}
 	var req struct {
-		Fields fieldsToWrite `json:"fields"`
+		Fields struct {
+			Labels []string `json:"labels"` // Don't use omitempty
+		} `json:"fields"`
 	}
 	req.Fields.Labels = labels
 	_, err = jb.punchItChewie(

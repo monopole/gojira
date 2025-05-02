@@ -72,7 +72,7 @@ func newCalCmd(jb *myj.JiraBoss) *cobra.Command {
 			err := report.DoCal(os.Stdout, epicMap, calP)
 			if err != nil {
 				utils.DoErr1(err.Error())
-				utils.DoErr1("use the '" + fixDatesCmd + "' command to see and repair errors")
+				utils.DoErr1("use '" + fixDatesCmd + "' command to see and repair errors")
 			}
 			return nil
 		},

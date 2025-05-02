@@ -68,6 +68,7 @@ func NewGoJiraCommand() *cobra.Command {
 	c.AddCommand(
 		set.NewSetCmd(&jb),
 		newLabelCmd(&jb),
+		newAssignCmd(&jb),
 		newFieldCmd(&jb),
 		epic.NewEpicCmd(&jb),
 		newPrintCmd(&jb),
