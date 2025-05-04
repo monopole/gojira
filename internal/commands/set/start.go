@@ -29,9 +29,10 @@ func newStartCmd(jb *myj.JiraBoss) *cobra.Command {
     set start 2026-jan-1 99 300 
 
   The existing end date will be shifted to keep the duration the same.
-  If there is no existing end date, it will be set to establish
-  a duration of ` + strconv.Itoa(defaultWeeks) + ` weeks.
-  One can change this with 'set duration'.
+  If there is no existing end date, the end date will be set to establish
+  a default duration of ` + strconv.Itoa(defaultWeeks) + ` weeks.
+
+  If desired, use 'set duration' to set a different duration value.
 `,
 		Args: func(_ *cobra.Command, args []string) (err error) {
 			if len(args) < 2 {

@@ -2,6 +2,7 @@ package set
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/monopole/gojira/internal/myj"
 	"github.com/monopole/gojira/internal/utils"
@@ -22,36 +23,44 @@ func newDurationCmd(jb *myj.JiraBoss) *cobra.Command {
 		Use:   "duration {duration} {issueNum}...",
 		Short: `Set the work duration for a set of issues in days, weeks or months`,
 		Example: `
-  Set duration of issues 99 and 300 to two months:
+  Set duration of issues 99 and 300 to ~two months:
 
     set duration 2m  99 300
     set duration 8w  99 300
     set duration 60d 99 300
 
-  This sets the "Target Completion Date" of these issues to be
-  two months after their start dates.
+  This sets the '` + myj.CustomFieldTargetCompletionDate +
+			`' of these issues to be two
+  months after their start dates.  If a start date isn't already
+  set, it will be initialized to the next business day after today.
 
-  If the start date isn't set, it will be initialized to today (` + utils.Today().String() + `).
+  Prefix with a plus or minus sign to treat the duration as
+  a delta to the existing duration:
 
-  Add -` + deltaFlagShort + ` to treat the argument as a delta.
-
-    set duration -` + deltaFlagShort + ` 1w  99      // add one week to existing duration
-    set duration -` + deltaFlagShort + ` -- -2d  99  // subtract two days from existing duration
+    set duration +1m  99       // add one month to existing duration
+    set duration -- -2w  99    // subtract two weeks from existing duration
 `,
 		Args: func(_ *cobra.Command, args []string) (err error) {
 			if len(args) < 2 {
 				return fmt.Errorf("specify a date and issue number")
 			}
-			dayCount, err = utils.ConvertToDayCount(args[0])
+			argZero := strings.TrimPrefix(args[0], "-")
+			sign := 1
+			if len(argZero) < len(args[0]) {
+				delta = true
+				sign = -1
+			} else {
+				argZero = strings.TrimPrefix(args[0], "+")
+				delta = len(argZero) < len(args[0])
+			}
+			dayCount, err = utils.ConvertToDayCount(argZero)
 			if err != nil {
 				return err
 			}
 			if dayCount == 0 {
 				return fmt.Errorf("duration must be non-zero")
 			}
-			if dayCount < 0 && !delta {
-				return fmt.Errorf("duration must positive unless using --" + deltaFlag)
-			}
+			dayCount *= sign
 			issues, err = utils.ConvertToInt(args[1:])
 			return err
 		},
@@ -64,7 +73,7 @@ func newDurationCmd(jb *myj.JiraBoss) *cobra.Command {
 				}
 				start := record.DateStart()
 				if !start.IsDefined() {
-					start = utils.Today().SlideOverWeekend()
+					start = utils.Today().AddDays(1).SlideOverWeekend()
 				}
 				end := record.DateEnd()
 				if !end.IsDefined() {
@@ -82,9 +91,5 @@ func newDurationCmd(jb *myj.JiraBoss) *cobra.Command {
 			return nil
 		},
 	}
-	c.Flags().BoolVarP(
-		&delta, deltaFlag, deltaFlagShort, false,
-		"treat argument as a delta, not an absolute")
-
 	return c
 }
