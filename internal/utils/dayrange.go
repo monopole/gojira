@@ -122,11 +122,6 @@ func (dr *DayRange) EndsAfter(other *DayRange) bool {
 	return dr.End().After(other.End())
 }
 
-// PrettyDayCount returns an easier to understand day count
-func PrettyDayCount(dayCount int) string {
-	return fmt.Sprintf("%dw%dd", dayCount/7, dayCount%7)
-}
-
 // PrettyRange returns a simplified date range as a string.
 func (dr *DayRange) PrettyRange() string {
 	start := dr.Start()

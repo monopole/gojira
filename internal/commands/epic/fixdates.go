@@ -38,7 +38,6 @@ If a new end date lands on a weekend, it slides back to the preceding Friday.
 			if err != nil {
 				return err
 			}
-			g.SaveOriginalDates()
 			g.ScanAndReportNodes(os.Stderr)
 			g.ReportMisOrdering(os.Stderr)
 			g.ReportWeekends(os.Stderr)

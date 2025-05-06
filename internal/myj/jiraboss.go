@@ -385,8 +385,8 @@ func (jb *JiraBoss) WriteDates(doIt bool, nodes map[MyKey]*Node) error {
 	proposedChangeCount := 0
 	success := 0
 	for key, node := range nodes {
-		if node.originalStart != node.startD ||
-			node.originalEnd != node.endD {
+		if node.issue.DateStart() != node.dateStart ||
+			node.issue.DateEnd() != node.dateEnd {
 			proposedChangeCount++
 			_, _ = fmt.Fprintf(
 				os.Stderr,
@@ -398,14 +398,14 @@ func (jb *JiraBoss) WriteDates(doIt bool, nodes map[MyKey]*Node) error {
 					}
 					return "should change"
 				}(),
-				node.originalStart.DayCount(node.originalEnd),
-				node.originalStart.String(),
-				node.startD.DayCount(node.endD),
-				node.startD.String(),
+				node.issue.DateStart().DayCount(node.issue.DateEnd()),
+				node.issue.DateStart().String(),
+				node.dateStart.DayCount(node.dateEnd),
+				node.dateStart.String(),
 			)
 			if doIt {
 				if err := jb.SetDates(
-					key.Num, node.startD, node.endD); err == nil {
+					key.Num, node.dateStart, node.dateEnd); err == nil {
 					success++
 				} else {
 					lastErr = err

@@ -226,7 +226,7 @@ func (jb *JiraBoss) CreateDiGraph() (*Graph, error) {
 }
 
 // considerEpic adds the incoming epic to a graph (if not already seen),
-// then looks for epics that block it.
+// then looks for other epics that block it (other epics it depends on).
 func (jb *JiraBoss) considerEpic(
 	epic *ResponseIssue, visited map[MyKey]*Node, edges map[Edge]bool) {
 	if _, seen := visited[epic.MyKey]; seen {
@@ -265,7 +265,7 @@ func (jb *JiraBoss) considerEpic(
 					epicKey, issue.Type(), issue.MyKey, issue.Status())
 				continue
 			}
-			edges[MakeEdge(epicKey, issue.MyKey)] = true
+			edges[Edge{parent: issue.MyKey, child: epicKey}] = true
 			jb.considerEpic(issue, visited, edges)
 		}
 	}
